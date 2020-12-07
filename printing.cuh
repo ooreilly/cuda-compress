@@ -15,9 +15,9 @@ __dev __host void print_array(float *a, int nx, int ny, int nz, int ix0=0, int i
         iyn = iyn == 0 ? ny : iyn;
         izn = izn == 0 ? nz : izn;
 
-        assert(nx <= ixn);
-        assert(ny <= iyn);
-        assert(nz <= izn);
+        assert(ixn <= nx);
+        assert(iyn <= ny);
+        assert(izn <= nz);
 
         for (int iz = iz0; iz < izn; ++iz) {
                 printf("iz = %d \n", iz);

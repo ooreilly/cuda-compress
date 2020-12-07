@@ -5,8 +5,8 @@
 // Write bx * by * bz blocks each of dimension nx * ny * nz
 void init_x(float*& out, int nx, int ny, int nz, int bx, int by, int bz) {
 
-        size_t block = bx * by * bz;
-        out = (float*)malloc(sizeof(float) * block * nx * ny * nz);
+        size_t block = nx * ny * nz;
+        out = (float*)malloc(sizeof(float) * block * bx * by * bz);
 
         // Number of blocks
         for (int jz = 0; jz < bz; ++jz)
@@ -18,7 +18,7 @@ void init_x(float*& out, int nx, int ny, int nz, int bx, int by, int bz) {
                 for (int ix = 0; ix < nx; ++ix) {
                         size_t pos_block =  ix + nx * (iy + ny * iz);
                         size_t pos = pos_block + block * (jx + bx * (jy + by * jz));
-                        out[pos] = ix + nx * jx;// * iy * iz;      
+                        out[pos] = ix;// + nx * jx;// * iy * iz;      
                 }
         }
 }

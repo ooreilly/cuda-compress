@@ -131,27 +131,40 @@ inline __device__ void us79_8x8x8_compute(float *p_in, int stride) {
 }
 
 template <int kernel>
-__global__ void wl79_8x8x8(float *in, int nx, int ny, int nz) {
+__global__ void wl79_8x8x8(float *in) {
 
-        int idx = threadIdx.x + blockDim.x * blockIdx.x;
-        int idy = threadIdx.y + blockDim.y * blockIdx.y;
+        int idx = threadIdx.x;
+        int idy = threadIdx.y;
+
 
         __shared__ float smem[512];
+        if (threadIdx.x == 0 && threadIdx.y == 0) {
+                for (int i = 0; i < 512; ++i) smem[i] = 0.0;
+        }
+        __syncthreads();
 
         const int warp_size = 32;
 
-        int x = idx;
+        size_t block_idx = 512 * (blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z));
 
         for (int z = 0; z < 8; ++z) {
                 // Load 2D plane
                 // one warp loads 32 B, which gets split over 4 rows
-                for (int y = 0; y < 8 / (4 * blockDim.y); ++y) { 
-                        size_t sptr = idx + warp_size * (idy +  blockDim.y * y) + 64 * z;
-                        smem[sptr] = in[x + (idy + blockDim.y * y) * warp_size + 64 * z]; 
-                }
+                size_t sptr = idx + warp_size * idy + 64 * z;
+                smem[sptr] = in[sptr + block_idx];
         }
-        __syncthreads();
 
+
+        //__syncthreads();
+        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1) {
+        //        printf("warp 1 grid = %d %d %d \n", gridDim.x, gridDim.y, gridDim.z);
+        //        print_array(smem, 8, 8, 8, 0, 0, 0, 4, 4, 8);
+        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
+        //        //printf("\n");
+        //}
+        //return;
+
+        __syncthreads();
         // Regroup threads for computation (8 x 4)
         int cx = threadIdx.x % 8;
         int cy = threadIdx.x / 8 + 4 * threadIdx.y;
@@ -183,11 +196,17 @@ __global__ void wl79_8x8x8(float *in, int nx, int ny, int nz) {
         // Write result back
         for (int z = 0; z < 8; ++z) {
                 // Load 2D plane
-                for (int y = 0; y < 8 / (4 * blockDim.y); ++y) { 
-                        size_t sptr = idx + warp_size * (idy +  blockDim.y * y) + 64 * z;
-                        in[x + (idy + blockDim.y * y) * warp_size + 64 * z] =  smem[sptr];
-                }
+                size_t sptr = idx + warp_size * idy + 64 * z;
+                in[sptr + block_idx] = smem[sptr];
         }
+
+        //__syncthreads();
+        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1) {
+        //        printf("warp 1 grid = %d %d %d \n", gridDim.x, gridDim.y, gridDim.z);
+        //        print_array(&in[block_idx], 8, 8, 8, 0, 0, 0, 4, 4, 8);
+        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
+        //        //printf("\n");
+        //}
 }
 
 
