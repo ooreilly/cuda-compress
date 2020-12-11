@@ -15,11 +15,12 @@
 #include "diff.h"
 #include "norms.h"
 #include "init_x.h"
+#include "init_random.h"
 
 const int FORWARD = 0;
 const int INVERSE = 1;
 const int CPU_COMPUTE = 0;
-const int ERR_CHECK = 0;
+const int ERR_CHECK = 1;
 
 
 int main(int argc, char **argv) {
@@ -44,7 +45,7 @@ int main(int argc, char **argv) {
                 by = 1248 / ny;
                 bz = 960 / nz;
 
-                init_x(x, nx, ny, nz, bx, by, bz);
+                init_random(x, nx, ny, nz, bx, by, bz);
 
 
         }
@@ -86,11 +87,9 @@ int main(int argc, char **argv) {
         float elapsed = 0;
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
-        dim3 threads(32, 2, 1);
-        dim3 blocks(bx, by, bz);
         printf("Computing GPU forward transform... \n");
         cudaEventRecord(start);
-        wl79_8x8x8<FORWARD><<<blocks, threads>>>(d_x);
+        wl79_8x8x8_h<FORWARD>(d_x, bx, by, bz);
         cudaErrCheck(cudaPeekAtLastError());
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
@@ -103,7 +102,7 @@ int main(int argc, char **argv) {
         printf("Computing GPU inverse transform... \n");
         elapsed = 0;
         cudaEventRecord(start);
-        wl79_8x8x8<INVERSE><<<blocks, threads>>>(d_x);
+        wl79_8x8x8_h<INVERSE>(d_x, bx, by, bz);
         cudaErrCheck(cudaPeekAtLastError());
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);

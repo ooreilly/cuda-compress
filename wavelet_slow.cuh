@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <cuda.h>
+#include "cuda_err_check.h"
 
 #define al0  8.526986790094000e-001f
 #define al1  3.774028556126500e-001f
@@ -19,7 +20,6 @@ inline __device__ int dMIRR(int inp_val, int dim)
 	val = (val >= dim) ? (2*dim-2-val) : val;
 	val = val < 0 ? -val : val;
 	val = (val >= dim) ? (2*dim-2-val) : val;
-	//printf("  -> -> MIRR(%d,%d) = %d\n",inp_val,dim,val);
 	return val;
 }
 
@@ -210,4 +210,10 @@ __global__ void wl79_8x8x8(float *in) {
 }
 
 
-
+template <int mode>
+void wl79_8x8x8_h(float *in, const int bx, const int by, const int bz) {
+        dim3 threads(32, 2, 1);
+        dim3 blocks(bx, by, bz);
+        wl79_8x8x8<mode><<<blocks, threads>>>(in);
+        cudaErrCheck(cudaPeekAtLastError());
+}

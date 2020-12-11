@@ -41,13 +41,10 @@ void transform(int nx, int ny, int nz, int bx, int by, int bz) {
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
 
-        dim3 threads(32, 2, 1);
-        dim3 blocks(bx, by, bz);
-
         printf("Computing GPU forward transform... \n");
         {
                 cudaEventRecord(start);
-                wl79_8x8x8<FORWARD><<<blocks, threads>>>(d_x);
+                wl79_8x8x8_h<FORWARD>(d_x, bx, by, bz);
                 cudaEventRecord(stop);
                 cudaEventSynchronize(stop);
                 cudaEventElapsedTime(&elapsed, start, stop);
@@ -59,7 +56,7 @@ void transform(int nx, int ny, int nz, int bx, int by, int bz) {
         printf("Computing GPU inverse transform... \n");
         {
                 cudaEventRecord(start);
-                wl79_8x8x8<INVERSE><<<blocks, threads>>>(d_x);
+                wl79_8x8x8_h<INVERSE>(d_x, bx, by, bz);
                 cudaEventRecord(stop);
                 cudaEventSynchronize(stop);
                 cudaEventElapsedTime(&elapsed, start, stop);

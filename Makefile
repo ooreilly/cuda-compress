@@ -6,7 +6,7 @@ CFLAGS=-fopenmp -O3 -fPIC -mavx -g
 LDFLAGS=-fopenmp -lm -lrt
 arch=sm_75
 
-all: write_volume read_volume test_wavelet_transform_slow test_wavelet_transform_with_input
+all: write_volume read_volume test_wavelet_transform_slow test_wavelet_transform_with_input test_all_blocks
 
 write_volume:
 	$(CXX) $(LDFLAGS) write_volume.c -o write_volume.x
@@ -19,6 +19,9 @@ test_wavelet_transform_slow:
 
 test_wavelet_transform_with_input:
 	$(NVCC) $(NVFLAGS) test_wavelet_transform_with_input.cu -o test_wavelet_transform_with_input.x
+
+test_all_blocks:
+	$(NVCC) $(NVFLAGS) test_all_blocks.cu -o test_all_blocks.x
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $*.c
