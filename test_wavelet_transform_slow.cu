@@ -6,6 +6,7 @@
 #define NVCC
 #include "printing.cuh"
 
+#include "cuda_err_check.h"
 #include "read_volume.h"
 #include "write_volume.h"
 #include "wavelet_slow.h"
@@ -13,22 +14,40 @@
 #include "compare.h"
 #include "diff.h"
 #include "norms.h"
+#include "init_x.h"
 
 const int FORWARD = 0;
 const int INVERSE = 1;
+const int CPU_COMPUTE = 0;
+const int ERR_CHECK = 0;
+
 
 int main(int argc, char **argv) {
 
         
         const char *filename = argv[1];
         const char *outfilename = argv[2];
-
+        
         int nx, ny, nz, bx, by, bz;
-
         float *x, *x2;
-        printf("reading: %s \n", filename);
-        read_volume(filename, x, nx, ny, nz, bx, by, bz);
-        read_volume(filename, x2, nx, ny, nz, bx, by, bz);
+
+        if (filename) {
+                printf("reading: %s \n", filename);
+                read_volume(filename, x, nx, ny, nz, bx, by, bz);
+                read_volume(filename, x2, nx, ny, nz, bx, by, bz);
+        } else {
+
+                nx = 8;
+                ny = 8; 
+                nz = 8;
+                bx = 1056 / nx;
+                by = 1248 / ny;
+                bz = 960 / nz;
+
+                init_x(x, nx, ny, nz, bx, by, bz);
+
+
+        }
         printf("block dimension: %d %d %d \n", nx, ny, nz);
         printf("number of blocks: %d %d %d \n", bx, by, bz);
         size_t num_bytes = sizeof(float) * nx * ny * nz * bx * by * bz;
@@ -48,14 +67,12 @@ int main(int argc, char **argv) {
         int n = nx * ny * nz;
 
 
-        {
+        if (CPU_COMPUTE) {
 
-        printf("Computing CPU forward transform... \n");
+        printf("Computing CPU forward transform (single block) ... \n");
         Wavelet_Transform_Slow_Forward(x, work, 8, 8, 8, x0, y0, z0, 8, 8, 8);
-        printf("Computing CPU inverse transform... \n");
+        printf("Computing CPU inverse transform (single block) ... \n");
         Wavelet_Transform_Slow_Inverse(x, work, 8, 8, 8, x0, y0, z0, 8, 8, 8);
-
-        //assert(compare(x, x2, 8, 8, 8, 1));
 
         double l2err = l2norm(x, x2, b * n);
         double l1err = l1norm(x, x2, b * n);
@@ -64,23 +81,50 @@ int main(int argc, char **argv) {
         }
 
         {
+
+        cudaEvent_t start, stop;
+        float elapsed = 0;
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
         dim3 threads(32, 2, 1);
         dim3 blocks(bx, by, bz);
         printf("Computing GPU forward transform... \n");
+        cudaEventRecord(start);
         wl79_8x8x8<FORWARD><<<blocks, threads>>>(d_x);
-        cudaDeviceSynchronize();
-        printf("Computing GPU inverse transform... \n");
-        wl79_8x8x8<INVERSE><<<blocks, threads>>>(d_x);
-        cudaDeviceSynchronize();
-        cudaMemcpy(x_gpu, d_x, num_bytes, cudaMemcpyDeviceToHost);
-        assert(compare(x, x_gpu, 8, 8, 8, 1));
+        cudaErrCheck(cudaPeekAtLastError());
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
 
-        const char *errtype[] = {"abs.", "rel."};
-        for (int a = 0; a < 2; ++a) {
-        double l2err = l2norm(x, x_gpu, b * n, a);
-        double l1err = l1norm(x, x_gpu, b * n, a);
-        double linferr = linfnorm(x, x_gpu, b * n, a);
-        printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
+        cudaEventElapsedTime(&elapsed, start, stop);
+        cudaDeviceSynchronize();
+        printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
+
+
+        printf("Computing GPU inverse transform... \n");
+        elapsed = 0;
+        cudaEventRecord(start);
+        wl79_8x8x8<INVERSE><<<blocks, threads>>>(d_x);
+        cudaErrCheck(cudaPeekAtLastError());
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+
+        cudaEventElapsedTime(&elapsed, start, stop);
+        cudaDeviceSynchronize();
+        printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
+        cudaDeviceSynchronize();
+
+        if (ERR_CHECK) {
+                printf("Running error checking... \n");
+                cudaMemcpy(x_gpu, d_x, num_bytes, cudaMemcpyDeviceToHost);
+                assert(compare(x, x_gpu, 8, 8, 8, 1));
+
+                const char *errtype[] = {"abs.", "rel."};
+                for (int a = 0; a < 2; ++a) {
+                double l2err = l2norm(x, x_gpu, b * n, a);
+                double l1err = l1norm(x, x_gpu, b * n, a);
+                double linferr = linfnorm(x, x_gpu, b * n, a);
+                printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
+        }
         }
         return -1;
         }
