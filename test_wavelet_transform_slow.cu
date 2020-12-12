@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 		if (nx > 1) for (int iy = 0;  iy < ny;  ++iy) Ds79(x+((iz+z0)*ny+(iy+y0))*nx+(x0), work,  1, nx);
 		if (ny > 1) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((iz+z0)*ny+(y0))*nx+(ix+x0), work, nx, ny);
 	}
-	//if (bz > 1) for (int iy = 0;  iy < ny;  ++iy) for (int ix = 0;  ix < bx;  ++ix) Ds79(x+((z0)*ny+(iy+y0))*nx+(ix+x0), work, nx*ny, nz);
+	if (nz > 1) for (int iy = 0;  iy < ny;  ++iy) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((z0)*ny+(iy+y0))*nx+(ix+x0), work, nx*ny, nz);
 
         printf("Computing CPU inverse transform (single block) ... \n");
         //Wavelet_Transform_Slow_Inverse(x, work, 8, 8, 8, x0, y0, z0, 8, 8, 8);
