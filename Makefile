@@ -1,10 +1,10 @@
 CC = gcc
 CXX = g++
 NVCC = nvcc
-NVFLAGS=-Xptxas -v -g -use_fast_math
+arch=sm_75
+NVFLAGS= -arch=$(arch) -Xptxas -v -g -use_fast_math
 CFLAGS=-fopenmp -O3 -fPIC -mavx -g
 LDFLAGS=-fopenmp -lm -lrt
-arch=sm_75
 
 all: write_volume read_volume test_wavelet_transform_slow test_wavelet_transform_with_input test_all_blocks
 

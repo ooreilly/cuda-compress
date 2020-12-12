@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "write_volume.h"
 #include "init_x.h"
+#include "init_z.h"
 
 
 
@@ -17,7 +18,7 @@ int main(int argc, char **argv) {
         int bz = atoi(argv[7]);
 
         float *x;
-        init_x(x, nx, ny, nz, bx, by, bz);
+        init_z(x, nx, ny, nz, bx, by, bz);
 
         if (argc != 8) {
                 printf("usage: %s <filename> <nx> <ny> <nz> <bx> <by> <bz>\n", argv[0]);

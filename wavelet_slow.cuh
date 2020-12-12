@@ -48,11 +48,11 @@ inline __device__ int dMIRR_SH(int inp_val, int nl, int nh)
 	return nl + val;
 }
 
-inline __device__ void ds79_8x8x8_compute(float *p_in, int stride) {
-        float p_tmp[8];
+template <int size>
+inline __device__ void ds79_compute(float *p_in, int stride) {
+        float p_tmp[size];
 
-        #pragma unroll
-	for (int n = 8;  n >= 2;  n = n-n/2)
+	for (int n = size;  n >= 2;  n = n-n/2)
 	{
 
 		// copy inputs to tmp buffer, p_in will be overwritten
@@ -86,6 +86,51 @@ inline __device__ void ds79_8x8x8_compute(float *p_in, int stride) {
 
 			float acc1 = ah3 * (p_tmp[im3] + p_tmp[ip3]);
 			acc1 += ah0 * p_tmp[i0];
+			float acc2 = ah2 * (p_tmp[im2] + p_tmp[ip2]);
+			acc2 += ah1 * (p_tmp[im1] + p_tmp[ip1]);
+			p_in[(nl+ix)*stride] = acc1 + acc2;
+		}
+	}
+
+}
+
+template <int size>
+inline __device__ void ds79_compute_shared(float *p_in, float *p_tmp, int stride) {
+
+	for (int n = size;  n >= 2;  n = n-n/2)
+	{
+
+		// copy inputs to tmp buffer, p_in will be overwritten
+		for (int i = 0;  i < n;  ++i) p_tmp[i*stride] = p_in[i*stride];
+
+		int nh = n / 2;
+		int nl = n - nh;
+		for (int ix = 0;  ix < nl;  ++ix)
+		{
+
+			int i0 = 2 * ix;
+			int im1 = stride * dMIRR(i0-1,n);  int ip1 = stride * dMIRR(i0+1,n);
+			int im2 = stride * dMIRR(i0-2,n);  int ip2 = stride * dMIRR(i0+2,n);
+			int im3 = stride * dMIRR(i0-3,n);  int ip3 = stride * dMIRR(i0+3,n);
+			int im4 = stride * dMIRR(i0-4,n);  int ip4 = stride * dMIRR(i0+4,n);
+
+			// sum smallest to largest (most accurate way of summing floats)
+			float acc1 = al4 * (p_tmp[im4] + p_tmp[ip4]);
+			acc1 += al1 * (p_tmp[im1] + p_tmp[ip1]);
+			acc1 += al0 * p_tmp[i0 * stride];
+			float acc2 = al3 * (p_tmp[im3] + p_tmp[ip3]);
+			acc2 += al2 * (p_tmp[im2] + p_tmp[ip2]);
+			p_in[ix*stride] = acc1 + acc2;
+		}
+		for (int ix = 0;  ix < nh;  ++ix)
+		{
+			int i0 = 2 * ix + 1;
+			int im1 = stride * dMIRR(i0-1,n);  int ip1 = stride * dMIRR(i0+1,n);
+			int im2 = stride * dMIRR(i0-2,n);  int ip2 = stride * dMIRR(i0+2,n);
+			int im3 = stride * dMIRR(i0-3,n);  int ip3 = stride * dMIRR(i0+3,n);
+
+			float acc1 = ah3 * (p_tmp[im3] + p_tmp[ip3]);
+			acc1 += ah0 * p_tmp[i0 * stride];
 			float acc2 = ah2 * (p_tmp[im2] + p_tmp[ip2]);
 			acc2 += ah1 * (p_tmp[im1] + p_tmp[ip1]);
 			p_in[(nl+ix)*stride] = acc1 + acc2;
@@ -138,10 +183,6 @@ __global__ void wl79_8x8x8(float *in) {
 
 
         __shared__ float smem[512];
-        if (threadIdx.x == 0 && threadIdx.y == 0) {
-                for (int i = 0; i < 512; ++i) smem[i] = 0.0;
-        }
-        __syncthreads();
 
         const int warp_size = 32;
 
@@ -172,13 +213,13 @@ __global__ void wl79_8x8x8(float *in) {
         // Forward
         if (kernel == 0) {
                 // Apply wavelet transform line by line in the x-direction
-                ds79_8x8x8_compute(&smem[8 * cx + 64 * cy], 1);
+                ds79_compute<8>(&smem[8 * cx + 64 * cy], 1);
                 __syncthreads();
                 // Apply wavelet transform line by line in the y-direction
-                ds79_8x8x8_compute(&smem[cx + 64 * cy], 8);
+                ds79_compute<8>(&smem[cx + 64 * cy], 8);
                 __syncthreads();
                 // Apply wavelet transform line by line in the z-direction
-                ds79_8x8x8_compute(&smem[cy + 8 * cx], 64);
+                ds79_compute<8>(&smem[cy + 8 * cx], 64);
                 __syncthreads();
         // Inverse transform
         } else {
@@ -215,5 +256,140 @@ void wl79_8x8x8_h(float *in, const int bx, const int by, const int bz) {
         dim3 threads(32, 2, 1);
         dim3 blocks(bx, by, bz);
         wl79_8x8x8<mode><<<blocks, threads>>>(in);
+        cudaErrCheck(cudaPeekAtLastError());
+}
+
+
+template <int kernel, int block_y>
+__launch_bounds__(32 * block_y)
+__global__ void wl79_32x32x32(float *in) {
+
+        int idx = threadIdx.x;
+        int idy = threadIdx.y;
+
+        const int planes = 4;//block_y;
+        const int block_size = 32 * 32 * 32;
+
+        __shared__ float smem[1024 * planes];
+        __shared__ float smem2[1024 * planes];
+        if (threadIdx.x == 0 && threadIdx.y == 0) {
+                for (int i = 0; i < 1024 * planes; ++i) smem[i] = 0.0;
+        }
+        __syncthreads();
+
+        const int warp_size = 32;
+
+        size_t block_idx = block_size * (blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z));
+
+        const int num_batches = 32 / planes;
+
+        for (int batch_z = 0; batch_z < num_batches; ++batch_z) {
+              // Load all (x,y) planes into shared memory  
+              for (int z = 0; z < planes; ++z) {
+                      // Process an entire 32 x 32 plane
+                      for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
+                        size_t sptr = idx + warp_size * (tile_y * block_y + idy) + 1024 * z;
+                        smem[sptr] = in[batch_z * planes * 1024 + sptr + block_idx];
+                      }
+              }
+
+              __syncthreads();
+
+        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0) {
+        //        printf("step = %d, warp 1 grid = %d %d %d \n", batch_z, gridDim.x, gridDim.y, gridDim.z);
+        //        print_array(smem, 32, 32, planes, 0, 0, 0, 4, 4, planes);
+        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
+        //        //printf("\n");
+        //}
+        //__syncthreads();
+        //
+        //
+
+
+              // Apply wavelet transform line by line in the x-direction
+              for (int z = 0; z < planes / block_y; ++z) {
+                      ds79_compute_shared<32>(
+                          &smem[32 * idx + 1024 * (idy + z * block_y)],
+                          &smem2[32 * idx + 1024 * (idy + z * block_y)], 1);
+               }
+
+                __syncthreads();
+              // Apply wavelet transform line by line in the y-direction
+              for (int z = 0; z < planes / block_y; ++z) {
+                      ds79_compute_shared<32>(
+                          &smem[idx + 1024 * (idy + z * block_y)],
+                          &smem2[idx + 1024 * (idy + z * block_y)], 32);
+              }
+
+                __syncthreads();
+
+              // Write result to global memory
+              //
+              // Write all (x,y) planes into shared memory  
+              for (int z = 0; z < planes; ++z) {
+                      // Process an entire 32 x 32 plane
+                      for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
+                        size_t sptr = idx + warp_size * (tile_y * block_y + idy) + 1024 * z;
+                        in[batch_z * planes * 1024 + sptr + block_idx] = smem[sptr];
+                      }
+              }
+
+        
+
+        __syncthreads();
+
+
+        // Load all (x,z) planes into shared memory
+
+
+        }
+        //return;
+
+        // Forward
+        //if (kernel == 0) {
+        //        // Apply wavelet transform line by line in the x-direction
+        //        ds79_8x8x8_compute(&smem[8 * cx + 64 * cy], 1);
+        //        __syncthreads();
+        //        // Apply wavelet transform line by line in the y-direction
+        //        ds79_8x8x8_compute(&smem[cx + 64 * cy], 8);
+        //        __syncthreads();
+        //        // Apply wavelet transform line by line in the z-direction
+        //        ds79_8x8x8_compute(&smem[cy + 8 * cx], 64);
+        //        __syncthreads();
+        //// Inverse transform
+        //} else {
+        //        // Apply wavelet transform line by line in the x-direction
+        //        us79_8x8x8_compute(&smem[8 * cx + 64 * cy], 1);
+        //        __syncthreads();
+        //        // Apply wavelet transform line by line in the y-direction
+        //        us79_8x8x8_compute(&smem[cx + 64 * cy], 8);
+        //        __syncthreads();
+        //        // Apply wavelet transform line by line in the z-direction
+        //        us79_8x8x8_compute(&smem[cy + 8 * cx], 64);
+        //        __syncthreads();
+        //}
+
+        // Write result back
+        //for (int z = 0; z < 8; ++z) {
+        //        // Load 2D plane
+        //        size_t sptr = idx + warp_size * idy + 64 * z;
+        //        in[sptr + block_idx] = smem[sptr];
+        //}
+
+        //__syncthreads();
+        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1) {
+        //        printf("warp 1 grid = %d %d %d \n", gridDim.x, gridDim.y, gridDim.z);
+        //        print_array(&in[block_idx], 8, 8, 8, 0, 0, 0, 4, 4, 8);
+        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
+        //        //printf("\n");
+        //}
+}
+
+template <int mode>
+void wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
+        const int block_y = 4;
+        dim3 threads(32, block_y, 1);
+        dim3 blocks(bx, by, bz);
+        wl79_32x32x32<mode, block_y><<<blocks, threads>>>(in);
         cudaErrCheck(cudaPeekAtLastError());
 }
