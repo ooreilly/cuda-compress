@@ -22,7 +22,7 @@ const int INVERSE = 1;
 
 int err_check(float *x_gpu, float *d_x, float *x, const int nx, const int ny, const int nz, 
                 const int bx, const int by, const int bz, const bool verbose=false, 
-                const double l2_tol=1e-6, const double l1_tol=1e-12, const double linf_tol=1e-6) {
+                const double l2_tol=1e-6, const double l1_tol=1e-6, const double linf_tol=1e-6) {
         size_t b = bx * by * bz;
         size_t n = nx * ny * nz;
         size_t num_bytes = b * n * sizeof(float);
@@ -36,7 +36,7 @@ int err_check(float *x_gpu, float *d_x, float *x, const int nx, const int ny, co
                 double linferr = linfnorm(x, x_gpu, b * n, a);
                 if (verbose) printf("%s l2 error = %g l1 error = %g linf error = %g \n",
                        errtype[a], l2err, l1err, linferr);
-                if (a == 2 && (l2err > l2_tol || l1err > l1_tol || linferr > linf_tol) ) return 1;
+                if (a == 1 && (l2err > l2_tol || l1err > l1_tol || linferr > linf_tol) ) return 1;
         }
         return 0;
 }
