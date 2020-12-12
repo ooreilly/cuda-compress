@@ -141,14 +141,12 @@ inline __device__ void ds79_compute_shared(float *p_in, float *p_tmp, int stride
 
 inline __device__ void us79_8x8x8_compute(float *p_in, int stride) {
         const int dim = 8;
-        float l[8];
         float t[8];
-	int nx = 0;
-        #pragma unroll
-	for (int n = dim;  n >= 2;  n = n-n/2) {l[nx++] = n;}
+	int nx = 3;
+        int n = 1;
 	for (int li = nx-1;  li >= 0;  --li)
 	{
-		int n = l[li];
+		n *= 2;
 
 		// copy inputs to tmp buffer, p_in will be overwritten
 		for (int i = 0;  i < n;  ++i) t[i] = p_in[i*stride];
