@@ -19,7 +19,7 @@ double l1norm(T *a, T *b, int n, int relative = 0) {
         double err=0;
         double norm_a = 0;
         for (int i = 0; i < n; i++) {
-                err = a[i] - b[i] > 0 ? a[i] - b[i] : b[i] - a[i];
+                err += a[i] - b[i] > 0 ? a[i] - b[i] : b[i] - a[i];
                 if (relative) norm_a += a[i] > 0 ? a[i] : - a[i];
         }
         if (relative) err /= norm_a;
