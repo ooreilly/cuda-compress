@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
 
         test_kernel(WL79_8x8x8, 8, 8, 8, 11, 9, 8, verbose);
         test_kernel(WL79_32x32x32, 32, 32, 32, 11, 9, 8, verbose);
-        return -1;
+        test_kernel(OPT1WL79_32x32x32, 32, 32, 32, 11, 9, 8, verbose);
+        return 0;
 }
 

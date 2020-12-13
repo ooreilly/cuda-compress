@@ -19,6 +19,7 @@
 const int FORWARD = 0;
 const int INVERSE = 1;
 
+template <int mode>
 void transform(enum kernel k, int nx, int ny, int nz, int bx, int by, int bz) {
 
         size_t b = bx * by * bz;
@@ -38,42 +39,37 @@ void transform(enum kernel k, int nx, int ny, int nz, int bx, int by, int bz) {
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
 
-        cudaEventRecord(start);
-        wl79_h<FORWARD>(k, d_x, bx, by, bz);
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsed, start, stop);
-        cudaDeviceSynchronize();
-        printf(
-            "Forward \t %7s [%d, %d, %d] \t %7s [%d, %d, %d] \t %g Mcells/s\n",
-            "", nx, ny, nz, "", bx * nx, by * ny, bz * nz,
-            b * n / elapsed / 1e3);
-        cudaEventRecord(start);
-        wl79_h<INVERSE>(k, d_x, bx, by, bz);
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsed, start, stop);
-        cudaDeviceSynchronize();
-        printf(
-            "Inverse \t %7s [%d, %d, %d] \t %7s [%d, %d, %d] \t %g Mcells/s\n",
-            "", nx, ny, nz, "", bx * nx, by * ny, bz * nz,
-            b * n / elapsed / 1e3);
+        const char* modes[] = {"Forward", "Inverse"};
 
+        cudaEventRecord(start);
+        wl79_h<mode>(k, d_x, bx, by, bz);
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsed, start, stop);
+        cudaDeviceSynchronize();
+        printf(
+            "%-20s \t %s \t %7s [%d, %d, %d] \t %7s [%d, %d, %d] \t %g Mcells/s\n",
+            get_kernel_name(k), modes[mode], "", nx, ny, nz, "", bx * nx, by * ny, bz * nz,
+            b * n / elapsed / 1e3);
         free(x);
         cudaFree(d_x);
 }
 
 int main(int argc, char **argv) {
 
-        printf("Wavelet transform \t Block dimension \t Grid dimension \t Throughput\n");
+        printf("Kernel name       \t Wavelet transform \t Block dimension \t Grid dimension \t Throughput\n");
 
-        transform(WL79_8x8x8, 8, 8, 8, 44, 52, 40);
-        transform(WL79_8x8x8, 8, 8, 8, 88, 104, 80);
-        transform(WL79_8x8x8, 8, 8, 8, 132, 156, 120);
+        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 44, 52, 40);
+        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 88, 104, 80);
+        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 132, 156, 120);
 
-        transform(WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-        transform(WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        transform(WL79_32x32x32, 32, 32, 32, 40, 32, 18);
+        transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        //transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 20, 25, 20);
+        //transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 40, 32, 18);
+
+        transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 20, 25, 20);
+        //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 40, 32, 18);
         
 }
 

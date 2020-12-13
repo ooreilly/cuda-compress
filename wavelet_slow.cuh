@@ -14,7 +14,7 @@
 #define ah2 -4.068941760955800e-002f
 #define ah3  6.453888262893799e-002f
 
-enum kernel {WL79_8x8x8, WL79_32x32x32};
+enum kernel {WL79_8x8x8, WL79_32x32x32, OPT1WL79_32x32x32};
 
 inline __device__ int dMIRR(int inp_val, int dim)
 {
@@ -289,8 +289,12 @@ __global__ void wl79_32x32x32(float *in) {
         const int planes = block_y;
         const int block_size = 32 * 32 * 32;
 
-        __shared__ float smem[1024 * planes];
-        __shared__ float smem2[1024 * planes];
+        const int snx = 32;
+        const int sny = 32;
+        const int snxy = snx * sny;
+
+        __shared__ float smem[snxy * planes];
+        __shared__ float smem2[snxy * planes];
 
         size_t block_idx =
             block_size *
@@ -303,8 +307,9 @@ __global__ void wl79_32x32x32(float *in) {
               for (int z = 0; z < planes; ++z) {
                       // Process an entire 32 x 32 plane
                       for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
-                        size_t sptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
-                        smem[sptr] = in[batch_z * planes * 1024 + sptr + block_idx];
+                        size_t sptr = idx + snx * (tile_y * block_y + idy) + snxy * z;
+                        size_t gptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
+                        smem[sptr] = in[batch_z * planes * 1024 + gptr + block_idx];
                       }
               }
 
@@ -314,12 +319,12 @@ __global__ void wl79_32x32x32(float *in) {
               for (int z = 0; z < planes / block_y; ++z) {
                       if (kernel == 0) { 
                         ds79_compute_shared<32>(
-                            &smem[32 * idx + 1024 * (idy + z * block_y)],
-                            &smem2[32 * idx + 1024 * (idy + z * block_y)], 1);
+                            &smem[snx * idx + snxy * (idy + z * block_y)],
+                            &smem2[snx * idx + snxy * (idy + z * block_y)], 1);
                       } else {
                       us79_compute_shared<32>(
-                          &smem[32 * idx + 1024 * (idy + z * block_y)],
-                          &smem2[32 * idx + 1024 * (idy + z * block_y)], 1);
+                          &smem[snx * idx + snxy * (idy + z * block_y)],
+                          &smem2[snx * idx + snxy * (idy + z * block_y)], 1);
                         }
                }
 
@@ -329,12 +334,12 @@ __global__ void wl79_32x32x32(float *in) {
               for (int z = 0; z < planes / block_y; ++z) {
                       if (kernel == 0) {
                               ds79_compute_shared<32>(
-                                  &smem[idx + 1024 * (idy + z * block_y)],
-                                  &smem2[idx + 1024 * (idy + z * block_y)], 32);
+                                  &smem[idx + snxy * (idy + z * block_y)],
+                                  &smem2[idx + snxy * (idy + z * block_y)], snx);
                       } else {
                               us79_compute_shared<32>(
-                                  &smem[idx + 1024 * (idy + z * block_y)],
-                                  &smem2[idx + 1024 * (idy + z * block_y)], 32);
+                                  &smem[idx + snxy * (idy + z * block_y)],
+                                  &smem2[idx + snxy * (idy + z * block_y)], snx);
                       }
               }
 
@@ -345,8 +350,9 @@ __global__ void wl79_32x32x32(float *in) {
               for (int z = 0; z < planes; ++z) {
                       // Process an entire 32 x 32 plane
                       for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
-                        size_t sptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
-                        in[batch_z * planes * 1024 + sptr + block_idx] = smem[sptr];
+                        size_t sptr = idx + snx * (tile_y * block_y + idy) + snxy * z;
+                        size_t gptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
+                        in[batch_z * planes * 1024 + gptr + block_idx] = smem[sptr];
                       }
               }
 
@@ -362,7 +368,7 @@ __global__ void wl79_32x32x32(float *in) {
               for (int y = 0; y < planes; ++y) {
                       // Process an entire 32 x 32 plane
                       for (int tile_z = 0; tile_z < 32 / block_y; ++tile_z) {
-                        size_t sptr = idx + 32 * (tile_z * block_y + idy) + 1024 * y;
+                        size_t sptr = idx + snx * (tile_z * block_y + idy) + snxy * y;
                         size_t gptr = idx + 1024 * (tile_z * block_y + idy) + 32 * y;
                         smem[sptr] = in[batch_y * planes * 32 + gptr + block_idx];
                       }
@@ -374,12 +380,12 @@ __global__ void wl79_32x32x32(float *in) {
               for (int y = 0; y < planes / block_y; ++y) {
                       if (kernel == 0) {
                         ds79_compute_shared<32>(
-                            &smem[idx + 1024 * (idy + y * block_y)],
-                            &smem2[idx + 1024 * (idy + y * block_y)], 32);
+                            &smem[idx + snxy * (idy + y * block_y)],
+                            &smem2[idx + snxy * (idy + y * block_y)], snx);
                       } else {
                         us79_compute_shared<32>(
-                            &smem[idx + 1024 * (idy + y * block_y)],
-                            &smem2[idx + 1024 * (idy + y * block_y)], 32);
+                            &smem[idx + snxy * (idy + y * block_y)],
+                            &smem2[idx + snxy * (idy + y * block_y)], snx);
                       }
                }
 
@@ -390,7 +396,7 @@ __global__ void wl79_32x32x32(float *in) {
               for (int y = 0; y < planes; ++y) {
                       // Process an entire 32 x 32 plane
                       for (int tile_z = 0; tile_z < 32 / block_y; ++tile_z) {
-                        size_t sptr = idx + 32 * (tile_z * block_y + idy) + 1024 * y;
+                        size_t sptr = idx + snx * (tile_z * block_y + idy) + snxy * y;
                         size_t gptr = idx + 1024 * (tile_z * block_y + idy) + 32 * y;
                         in[batch_y * planes * 32 + gptr + block_idx] = smem[sptr];
                       }
@@ -408,6 +414,20 @@ void wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
         cudaErrCheck(cudaPeekAtLastError());
 }
 
+#include "opt_32.cuh"
+
+const char * get_kernel_name(enum kernel k) {
+        switch (k) {
+                case WL79_8x8x8:
+                        return "wl79_8x8x8";
+                case WL79_32x32x32:
+                        return "wl79_32x32x32";
+                case OPT1WL79_32x32x32:
+                        return "opt1wl79_32x32x32";
+        }
+        return "";
+}
+
 template<int mode>
 void wl79_h(enum kernel k, float *d_x, const int bx, const int by, const int bz) {
         switch (k) {
@@ -416,6 +436,9 @@ void wl79_h(enum kernel k, float *d_x, const int bx, const int by, const int bz)
                 break;
                 case WL79_32x32x32:
                 wl79_32x32x32_h<mode>(d_x, bx, by, bz);
+                break;
+                case OPT1WL79_32x32x32:
+                opt1wl79_32x32x32_h<mode>(d_x, bx, by, bz);
                 break;
 
         }
