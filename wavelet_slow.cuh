@@ -139,14 +139,20 @@ inline __device__ void ds79_compute_shared(float *p_in, float *p_tmp, int stride
 
 }
 
-inline __device__ void us79_8x8x8_compute(float *p_in, int stride) {
-        const int dim = 8;
+template <int dim>
+inline __device__ void us79_compute(float *p_in, int stride) {
         float t[8];
 	int nx = 3;
         int n = 1;
+
+        int l[dim];
+
+        //nx = 0;
+	//for (int n = dim;  n >= 2;  n = n-n/2) {l[nx++] = n;}
 	for (int li = nx-1;  li >= 0;  --li)
 	{
 		n *= 2;
+                //n = l[li];
 
 		// copy inputs to tmp buffer, p_in will be overwritten
 		for (int i = 0;  i < n;  ++i) t[i] = p_in[i*stride];
@@ -169,6 +175,60 @@ inline __device__ void us79_8x8x8_compute(float *p_in, int stride) {
 				sh0 * t[nl+k] +
 				sh2 * ( t[dMIRR_SH(nl+k-1,nl,nh)] + t[dMIRR_SH(nl+k+1,nl,nh)] ) +
 				sh4 * ( t[dMIRR_SH(nl+k-2,nl,nh)] + t[dMIRR_SH(nl+k+2,nl,nh)] );
+		}
+	}
+}
+
+template <int dim>
+inline __device__ void us79_compute_shared(float *p_in, float *t, int stride) {
+	int nx = 0;
+
+        int log2_dim = 0;
+        for (int i = dim; i >= 2; i /= 2) log2_dim++; 
+        int n = 1;
+
+        int l[5];
+        for (int i = 0; i < log2_dim; ++i)
+                l[i] = 0;
+
+	for (int n = dim;  n >= 2;  n = n-n/2) {l[nx++] = n; }
+        //if (threadIdx.x == 0 && threadIdx.y == 0) {
+        //for (int i = dim; i >= 1; i /= 2) {
+        //        printf("%d \n", i);
+        //        l[nx++] = i;
+        //}
+                for (int i = 0; i < log2_dim; ++i)
+                        printf("%d ", l[i]);
+                printf("\n");
+        //}
+        //nx = 0;
+	for (int li = nx-1;  li >= 0;  --li)
+	{
+		//n *= 2;
+                n = l[li];
+
+		// copy inputs to tmp buffer, p_in will be overwritten
+                //assert (n <= 32);
+		if (n <= dim) for (int i = 0;  i < n;  ++i) t[i*stride] = p_in[i*stride];
+
+		int nh = n / 2;
+		int nl = n - nh;
+		for (int k = 0;  k < nl;  ++k)
+		{
+			p_in[2*k*stride] = 
+				sl0 * t[stride * k] + 
+				sl2 * ( t[stride * dMIRR_SL(k-1,nl)] + t[stride * dMIRR_SL(k+1,nl)] ) +
+				sh1 * ( t[stride * dMIRR_SH(nl+k-1,nl,nh)] + t[stride * dMIRR_SH(nl+k,nl,nh)] ) +
+				sh3 * ( t[stride * dMIRR_SH(nl+k-2,nl,nh)] + t[stride * dMIRR_SH(nl+k+1,nl,nh)] );
+		}
+		for (int k = 0;  k < nh;  ++k)
+		{
+			p_in[(2*k+1)*stride] = 
+				sl1 * ( t[stride * dMIRR_SL(k,nl)] + t[stride * dMIRR_SL(k+1,nl)] ) +
+				sl3 * ( t[stride * dMIRR_SL(k-1,nl)] + t[stride * dMIRR_SL(k+2,nl)] ) +
+				sh0 * t[stride * (nl+k)] +
+				sh2 * ( t[stride * dMIRR_SH(nl+k-1,nl,nh)] + t[stride * dMIRR_SH(nl+k+1,nl,nh)] ) +
+				sh4 * ( t[stride * dMIRR_SH(nl+k-2,nl,nh)] + t[stride * dMIRR_SH(nl+k+2,nl,nh)] );
 		}
 	}
 }
@@ -222,13 +282,13 @@ __global__ void wl79_8x8x8(float *in) {
         // Inverse transform
         } else {
                 // Apply wavelet transform line by line in the x-direction
-                us79_8x8x8_compute(&smem[8 * cx + 64 * cy], 1);
+                us79_compute<8>(&smem[8 * cx + 64 * cy], 1);
                 __syncthreads();
                 // Apply wavelet transform line by line in the y-direction
-                us79_8x8x8_compute(&smem[cx + 64 * cy], 8);
+                us79_compute<8>(&smem[cx + 64 * cy], 8);
                 __syncthreads();
                 // Apply wavelet transform line by line in the z-direction
-                us79_8x8x8_compute(&smem[cy + 8 * cx], 64);
+                us79_compute<8>(&smem[cy + 8 * cx], 64);
                 __syncthreads();
         }
 
@@ -302,17 +362,29 @@ __global__ void wl79_32x32x32(float *in) {
 
               // Apply wavelet transform line by line in the x-direction
               for (int z = 0; z < planes / block_y; ++z) {
-                      ds79_compute_shared<32>(
+                      if (kernel == 0) { 
+                        ds79_compute_shared<32>(
+                            &smem[32 * idx + 1024 * (idy + z * block_y)],
+                            &smem2[32 * idx + 1024 * (idy + z * block_y)], 1);
+                      } else {
+                      us79_compute_shared<32>(
                           &smem[32 * idx + 1024 * (idy + z * block_y)],
                           &smem2[32 * idx + 1024 * (idy + z * block_y)], 1);
+                        }
                }
 
                 __syncthreads();
               // Apply wavelet transform line by line in the y-direction
               for (int z = 0; z < planes / block_y; ++z) {
-                      ds79_compute_shared<32>(
-                          &smem[idx + 1024 * (idy + z * block_y)],
-                          &smem2[idx + 1024 * (idy + z * block_y)], 32);
+                      if (kernel == 0) {
+                              ds79_compute_shared<32>(
+                                  &smem[idx + 1024 * (idy + z * block_y)],
+                                  &smem2[idx + 1024 * (idy + z * block_y)], 32);
+                      } else {
+                              us79_compute_shared<32>(
+                                  &smem[idx + 1024 * (idy + z * block_y)],
+                                  &smem2[idx + 1024 * (idy + z * block_y)], 32);
+                      }
               }
 
                 __syncthreads();
@@ -355,9 +427,15 @@ __global__ void wl79_32x32x32(float *in) {
 
               // Apply wavelet transform line by line in the z-direction
               for (int y = 0; y < planes / block_y; ++y) {
-                      ds79_compute_shared<32>(
-                          &smem[idx + 1024 * (idy + y * block_y)],
-                          &smem2[idx + 1024 * (idy + y * block_y)], 32);
+                      if (kernel == 0) {
+                        ds79_compute_shared<32>(
+                            &smem[idx + 1024 * (idy + y * block_y)],
+                            &smem2[idx + 1024 * (idy + y * block_y)], 32);
+                      } else {
+                        us79_compute_shared<32>(
+                            &smem[idx + 1024 * (idy + y * block_y)],
+                            &smem2[idx + 1024 * (idy + y * block_y)], 32);
+                      }
                }
 
 

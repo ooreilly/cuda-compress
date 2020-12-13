@@ -74,11 +74,11 @@ int main(int argc, char **argv) {
         //Wavelet_Transform_Slow_Forward(x, work, 32, 32, 32, x0, y0, z0, 32, 32, 32);
 
 
-	for (int iz = 0;  iz < nz;  ++iz) {
-		if (nx > 1) for (int iy = 0;  iy < ny;  ++iy) Ds79(x+((iz+z0)*ny+(iy+y0))*nx+(x0), work,  1, nx);
-		if (ny > 1) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((iz+z0)*ny+(y0))*nx+(ix+x0), work, nx, ny);
-	}
-	if (nz > 1) for (int iy = 0;  iy < ny;  ++iy) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((z0)*ny+(iy+y0))*nx+(ix+x0), work, nx*ny, nz);
+	//for (int iz = 0;  iz < nz;  ++iz) {
+	//	if (nx > 1) for (int iy = 0;  iy < ny;  ++iy) Ds79(x+((iz+z0)*ny+(iy+y0))*nx+(x0), work,  1, nx);
+	//	if (ny > 1) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((iz+z0)*ny+(y0))*nx+(ix+x0), work, nx, ny);
+	//}
+	//if (nz > 1) for (int iy = 0;  iy < ny;  ++iy) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((z0)*ny+(iy+y0))*nx+(ix+x0), work, nx*ny, nz);
 
         printf("Computing CPU inverse transform (single block) ... \n");
         //Wavelet_Transform_Slow_Inverse(x, work, 8, 8, 8, x0, y0, z0, 8, 8, 8);
@@ -96,11 +96,8 @@ int main(int argc, char **argv) {
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
         printf("[32, 32, 32] Computing GPU forward transform... \n");
-        cudaEventRecord(start);
         wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
-        cudaErrCheck(cudaPeekAtLastError());
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
+        wl79_32x32x32_h<INVERSE>(d_x, bx, by, bz);
         cudaDeviceSynchronize();
 
         if (ERR_CHECK) {
