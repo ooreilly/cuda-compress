@@ -71,22 +71,18 @@ int main(int argc, char **argv) {
         if (CPU_COMPUTE) {
 
         printf("Computing CPU forward transform (single block) ... \n");
-        //Wavelet_Transform_Slow_Forward(x, work, 32, 32, 32, x0, y0, z0, 32, 32, 32);
-
-
-	//for (int iz = 0;  iz < nz;  ++iz) {
-	//	if (nx > 1) for (int iy = 0;  iy < ny;  ++iy) Ds79(x+((iz+z0)*ny+(iy+y0))*nx+(x0), work,  1, nx);
-	//	if (ny > 1) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((iz+z0)*ny+(y0))*nx+(ix+x0), work, nx, ny);
-	//}
-	//if (nz > 1) for (int iy = 0;  iy < ny;  ++iy) for (int ix = 0;  ix < nx;  ++ix) Ds79(x+((z0)*ny+(iy+y0))*nx+(ix+x0), work, nx*ny, nz);
+        Wavelet_Transform_Slow_Forward(x, work, 32, 32, 32, x0, y0, z0, 32, 32, 32);
 
         printf("Computing CPU inverse transform (single block) ... \n");
-        //Wavelet_Transform_Slow_Inverse(x, work, 8, 8, 8, x0, y0, z0, 8, 8, 8);
+        Wavelet_Transform_Slow_Inverse(x, work, 32, 32, 32, x0, y0, z0, 32, 32, 32);
 
-        double l2err = l2norm(x, x2, b * n);
-        double l1err = l1norm(x, x2, b * n);
-        double linferr = linfnorm(x, x2, b * n);
-        printf("l2 error = %g l1 error = %g linf error = %g \n", l2err, l1err, linferr);
+        const char *errtype[] = {"abs.", "rel."};
+        for (int a = 0; a < 2; ++a) {
+        double l2err = l2norm(x, x2, b * n, a);
+        double l1err = l1norm(x, x2, b * n, a);
+        double linferr = linfnorm(x, x2, b * n, a);
+        printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
+        }
         }
 
         {
@@ -96,16 +92,29 @@ int main(int argc, char **argv) {
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
         printf("[32, 32, 32] Computing GPU forward transform... \n");
+        cudaEventRecord(start);
         wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
-        wl79_32x32x32_h<INVERSE>(d_x, bx, by, bz);
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsed, start, stop);
+
         cudaDeviceSynchronize();
+        printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
+
+        printf("[32, 32, 32] Computing GPU inverse transform... \n");
+        cudaEventRecord(start);
+        wl79_32x32x32_h<INVERSE>(d_x, bx, by, bz);
+        cudaEventRecord(stop);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsed, start, stop);
+        printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
 
         if (ERR_CHECK) {
                 printf("Running error checking... \n");
                 cudaMemcpy(x_gpu, d_x, num_bytes, cudaMemcpyDeviceToHost);
 
-                print_array(x_gpu, 32, 32, 32, 0, 0, 0, 4, 4, 4);
-                print_array(x, 32, 32, 32, 0, 0, 0, 4, 4, 4);
+                //print_array(x_gpu, 32, 32, 32, 0, 0, 0, 4, 4, 4);
+                //print_array(x, 32, 32, 32, 0, 0, 0, 4, 4, 4);
                 //assert(compare(x, x_gpu, 8, 8, 8, 1));
 
                 const char *errtype[] = {"abs.", "rel."};
@@ -116,9 +125,8 @@ int main(int argc, char **argv) {
                 printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
                 }
         }
-
-        exit(1);
         }
+
 
         {
 
@@ -126,10 +134,9 @@ int main(int argc, char **argv) {
         float elapsed = 0;
         cudaEventCreate(&start);
         cudaEventCreate(&stop);
-        printf("Computing GPU forward transform... \n");
+        printf("[8, 8, 8] Computing GPU forward transform... \n");
         cudaEventRecord(start);
         wl79_8x8x8_h<FORWARD>(d_x, bx, by, bz);
-        cudaErrCheck(cudaPeekAtLastError());
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
 
@@ -138,7 +145,7 @@ int main(int argc, char **argv) {
         printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
 
 
-        printf("Computing GPU inverse transform... \n");
+        printf("[8, 8, 8] Computing GPU inverse transform... \n");
         elapsed = 0;
         cudaEventRecord(start);
         wl79_8x8x8_h<INVERSE>(d_x, bx, by, bz);
@@ -149,6 +156,7 @@ int main(int argc, char **argv) {
         cudaDeviceSynchronize();
         printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
         cudaDeviceSynchronize();
+        }
 
         if (ERR_CHECK) {
                 printf("Running error checking... \n");
@@ -161,9 +169,7 @@ int main(int argc, char **argv) {
                 double l1err = l1norm(x, x_gpu, b * n, a);
                 double linferr = linfnorm(x, x_gpu, b * n, a);
                 printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
-        }
-        }
-        return -1;
+                }
         }
 
         if (VERBOSE) {
@@ -183,6 +189,7 @@ int main(int argc, char **argv) {
                 printf("writing: %s \n", outfilename);
                 write_volume(outfilename, x, nx, ny, nz, bx, by, bz);
         }
+
         
 }
 

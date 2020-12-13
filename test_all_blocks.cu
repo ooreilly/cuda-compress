@@ -20,7 +20,6 @@
 const int FORWARD = 0;
 const int INVERSE = 1;
 
-enum kernel {WL79_8x8x8, WL79_32x32x32};
 
 int err_check(float *x_gpu, float *d_x, float *x, const int nx, const int ny, const int nz, 
                 const int bx, const int by, const int bz, const bool verbose=false, 
@@ -62,17 +61,8 @@ int test_kernel(enum kernel k, const int nx, const int ny, const int nz, const i
         cudaMemcpy(d_x, x, num_bytes, cudaMemcpyHostToDevice);
 
         printf("dim = [%d %d %d] blocks = [%d %d %d] ", nx, ny, nz, bx, by, bz);
-        switch (k) {
-                case WL79_8x8x8:
-                wl79_8x8x8_h<FORWARD>(d_x, bx, by, bz);
-                wl79_8x8x8_h<INVERSE>(d_x, bx, by, bz);
-                break;
-                case WL79_32x32x32:
-                wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
-                wl79_32x32x32_h<INVERSE>(d_x, bx, by, bz);
-                break;
-
-        }
+        wl79_h<FORWARD>(k, d_x, bx, by, bz);
+        wl79_h<INVERSE>(k, d_x, bx, by, bz);
         cudaDeviceSynchronize();
         int err = err_check(x_gpu, d_x, x, nx, ny, nz, bx, by, bz, verbose);
         print_status(err);

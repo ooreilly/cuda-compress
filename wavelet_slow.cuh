@@ -14,6 +14,8 @@
 #define ah2 -4.068941760955800e-002f
 #define ah3  6.453888262893799e-002f
 
+enum kernel {WL79_8x8x8, WL79_32x32x32};
+
 inline __device__ int dMIRR(int inp_val, int dim)
 {
 	int val = inp_val < 0 ? -inp_val : inp_val;
@@ -142,17 +144,13 @@ inline __device__ void ds79_compute_shared(float *p_in, float *p_tmp, int stride
 template <int dim>
 inline __device__ void us79_compute(float *p_in, int stride) {
         float t[8];
-	int nx = 3;
+	int nx = 0;
+        for (int i = dim; i >= 2; i /= 2) nx++; 
+
         int n = 1;
-
-        int l[dim];
-
-        //nx = 0;
-	//for (int n = dim;  n >= 2;  n = n-n/2) {l[nx++] = n;}
 	for (int li = nx-1;  li >= 0;  --li)
 	{
 		n *= 2;
-                //n = l[li];
 
 		// copy inputs to tmp buffer, p_in will be overwritten
 		for (int i = 0;  i < n;  ++i) t[i] = p_in[i*stride];
@@ -425,4 +423,17 @@ void wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
         dim3 blocks(bx, by, bz);
         wl79_32x32x32<mode, block_y><<<blocks, threads>>>(in);
         cudaErrCheck(cudaPeekAtLastError());
+}
+
+template<int mode>
+void wl79_h(enum kernel k, float *d_x, const int bx, const int by, const int bz) {
+        switch (k) {
+                case WL79_8x8x8:
+                wl79_8x8x8_h<mode>(d_x, bx, by, bz);
+                break;
+                case WL79_32x32x32:
+                wl79_32x32x32_h<mode>(d_x, bx, by, bz);
+                break;
+
+        }
 }
