@@ -231,16 +231,6 @@ __global__ void wl79_8x8x8(float *in) {
                 smem[sptr] = in[sptr + block_idx];
         }
 
-
-        //__syncthreads();
-        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1) {
-        //        printf("warp 1 grid = %d %d %d \n", gridDim.x, gridDim.y, gridDim.z);
-        //        print_array(smem, 8, 8, 8, 0, 0, 0, 4, 4, 8);
-        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
-        //        //printf("\n");
-        //}
-        //return;
-
         __syncthreads();
         // Regroup threads for computation (8 x 4)
         int cx = threadIdx.x % 8;
@@ -277,13 +267,6 @@ __global__ void wl79_8x8x8(float *in) {
                 in[sptr + block_idx] = smem[sptr];
         }
 
-        //__syncthreads();
-        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 1) {
-        //        printf("warp 1 grid = %d %d %d \n", gridDim.x, gridDim.y, gridDim.z);
-        //        print_array(&in[block_idx], 8, 8, 8, 0, 0, 0, 4, 4, 8);
-        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
-        //        //printf("\n");
-        //}
 }
 
 

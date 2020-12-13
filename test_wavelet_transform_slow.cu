@@ -22,6 +22,9 @@ const int INVERSE = 1;
 const int CPU_COMPUTE = 1;
 const int ERR_CHECK = 1;
 
+const int RUN_32x32x32 = 1;
+const int RUN_8x8x8 = 1;
+
 
 int main(int argc, char **argv) {
 
@@ -58,7 +61,7 @@ int main(int argc, char **argv) {
 
         float *d_x;
         cudaMalloc((void**)&d_x, num_bytes);
-        cudaMemcpy(d_x, x, num_bytes, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_x, x2, num_bytes, cudaMemcpyHostToDevice);
 
         int x0 = 0;
         int y0 = 0;
@@ -85,7 +88,7 @@ int main(int argc, char **argv) {
         }
         }
 
-        {
+        if (RUN_32x32x32) {
 
         cudaEvent_t start, stop;
         float elapsed = 0;
@@ -119,16 +122,18 @@ int main(int argc, char **argv) {
 
                 const char *errtype[] = {"abs.", "rel."};
                 for (int a = 0; a < 2; ++a) {
-                double l2err = l2norm(x, x_gpu, b * n, a);
-                double l1err = l1norm(x, x_gpu, b * n, a);
-                double linferr = linfnorm(x, x_gpu, b * n, a);
+                double l2err = l2norm(x2, x_gpu, b * n, a);
+                double l1err = l1norm(x2, x_gpu, b * n, a);
+                double linferr = linfnorm(x2, x_gpu, b * n, a);
                 printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
                 }
         }
         }
 
 
-        {
+        if (RUN_8x8x8) {
+
+        cudaErrCheck(cudaMemcpy(d_x, x2, num_bytes, cudaMemcpyHostToDevice));
 
         cudaEvent_t start, stop;
         float elapsed = 0;
@@ -165,9 +170,9 @@ int main(int argc, char **argv) {
 
                 const char *errtype[] = {"abs.", "rel."};
                 for (int a = 0; a < 2; ++a) {
-                double l2err = l2norm(x, x_gpu, b * n, a);
-                double l1err = l1norm(x, x_gpu, b * n, a);
-                double linferr = linfnorm(x, x_gpu, b * n, a);
+                double l2err = l2norm(x2, x_gpu, b * n, a);
+                double l1err = l1norm(x2, x_gpu, b * n, a);
+                double linferr = linfnorm(x2, x_gpu, b * n, a);
                 printf("%s l2 error = %g l1 error = %g linf error = %g \n", errtype[a], l2err, l1err, linferr);
                 }
         }
