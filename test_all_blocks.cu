@@ -24,7 +24,7 @@ enum kernel {WL79_8x8x8, WL79_32x32x32};
 
 int err_check(float *x_gpu, float *d_x, float *x, const int nx, const int ny, const int nz, 
                 const int bx, const int by, const int bz, const bool verbose=false, 
-                const double l2_tol=1e-6, const double l1_tol=1e-6, const double linf_tol=1e-6) {
+                const double l2_tol=1e-5, const double l1_tol=1e-5, const double linf_tol=1e-5) {
         size_t b = bx * by * bz;
         size_t n = nx * ny * nz;
         size_t num_bytes = b * n * sizeof(float);

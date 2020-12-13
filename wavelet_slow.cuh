@@ -182,34 +182,14 @@ inline __device__ void us79_compute(float *p_in, int stride) {
 template <int dim>
 inline __device__ void us79_compute_shared(float *p_in, float *t, int stride) {
 	int nx = 0;
+        for (int i = dim; i >= 2; i /= 2) nx++; 
 
-        int log2_dim = 0;
-        for (int i = dim; i >= 2; i /= 2) log2_dim++; 
         int n = 1;
-
-        int l[5];
-        for (int i = 0; i < log2_dim; ++i)
-                l[i] = 0;
-
-	for (int n = dim;  n >= 2;  n = n-n/2) {l[nx++] = n; }
-        //if (threadIdx.x == 0 && threadIdx.y == 0) {
-        //for (int i = dim; i >= 1; i /= 2) {
-        //        printf("%d \n", i);
-        //        l[nx++] = i;
-        //}
-                for (int i = 0; i < log2_dim; ++i)
-                        printf("%d ", l[i]);
-                printf("\n");
-        //}
-        //nx = 0;
 	for (int li = nx-1;  li >= 0;  --li)
 	{
-		//n *= 2;
-                n = l[li];
-
+		n *= 2;
 		// copy inputs to tmp buffer, p_in will be overwritten
-                //assert (n <= 32);
-		if (n <= dim) for (int i = 0;  i < n;  ++i) t[i*stride] = p_in[i*stride];
+		for (int i = 0;  i < n;  ++i) t[i*stride] = p_in[i*stride];
 
 		int nh = n / 2;
 		int nl = n - nh;
@@ -331,9 +311,9 @@ __global__ void wl79_32x32x32(float *in) {
         __shared__ float smem[1024 * planes];
         __shared__ float smem2[1024 * planes];
 
-        const int warp_size = 32;
-
-        size_t block_idx = block_size * (blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z));
+        size_t block_idx =
+            block_size *
+            (blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z));
 
         const int num_batches_z = 32 / planes;
 
@@ -342,23 +322,12 @@ __global__ void wl79_32x32x32(float *in) {
               for (int z = 0; z < planes; ++z) {
                       // Process an entire 32 x 32 plane
                       for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
-                        size_t sptr = idx + warp_size * (tile_y * block_y + idy) + 1024 * z;
+                        size_t sptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
                         smem[sptr] = in[batch_z * planes * 1024 + sptr + block_idx];
                       }
               }
 
               __syncthreads();
-
-        //if (threadIdx.x == 0 && threadIdx.y == 0 && blockIdx.x == 0) {
-        //        printf("step = %d, warp 1 grid = %d %d %d \n", batch_z, gridDim.x, gridDim.y, gridDim.z);
-        //        print_array(smem, 32, 32, planes, 0, 0, 0, 4, 4, planes);
-        //        //for (int i = 0; i < 512; ++i) printf("%2.2f ", smem[i]);
-        //        //printf("\n");
-        //}
-        //__syncthreads();
-        //
-        //
-
 
               // Apply wavelet transform line by line in the x-direction
               for (int z = 0; z < planes / block_y; ++z) {
@@ -374,6 +343,7 @@ __global__ void wl79_32x32x32(float *in) {
                }
 
                 __syncthreads();
+
               // Apply wavelet transform line by line in the y-direction
               for (int z = 0; z < planes / block_y; ++z) {
                       if (kernel == 0) {
@@ -390,22 +360,16 @@ __global__ void wl79_32x32x32(float *in) {
                 __syncthreads();
 
               // Write result to global memory
-              //
               // Write all (x,y) planes back to global memory  
               for (int z = 0; z < planes; ++z) {
                       // Process an entire 32 x 32 plane
                       for (int tile_y = 0; tile_y < 32 / block_y; ++tile_y) {
-                        size_t sptr = idx + warp_size * (tile_y * block_y + idy) + 1024 * z;
+                        size_t sptr = idx + 32 * (tile_y * block_y + idy) + 1024 * z;
                         in[batch_z * planes * 1024 + sptr + block_idx] = smem[sptr];
                       }
               }
 
-        
-
         __syncthreads();
-
-
-
 
         }
         
