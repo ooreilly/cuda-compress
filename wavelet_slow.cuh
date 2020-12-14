@@ -14,7 +14,7 @@
 #define ah2 -4.068941760955800e-002f
 #define ah3  6.453888262893799e-002f
 
-enum kernel {WL79_8x8x8, WL79_32x32x32, OPT1WL79_32x32x32, OPT2WL79_32x32x32};
+enum kernel {WL79_8x8x8, WL79_32x32x32, OPT1WL79_32x32x32, OPT2WL79_32x32x32, OPT3WL79_32x32x32};
 
 inline __device__ int dMIRR(int inp_val, int dim)
 {
@@ -416,6 +416,7 @@ void wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
 
 #include "opt_32.cuh"
 #include "opt_32_2.cuh"
+#include "opt_32_3.cuh"
 
 const char * get_kernel_name(enum kernel k) {
         switch (k) {
@@ -427,6 +428,8 @@ const char * get_kernel_name(enum kernel k) {
                         return "opt1wl79_32x32x32";
                 case OPT2WL79_32x32x32:
                         return "opt2wl79_32x32x32";
+                case OPT3WL79_32x32x32:
+                        return "opt3wl79_32x32x32";
         }
         return "";
 }
@@ -445,6 +448,9 @@ void wl79_h(enum kernel k, float *d_x, const int bx, const int by, const int bz)
                 break;
                 case OPT2WL79_32x32x32:
                 opt2wl79_32x32x32_h<mode>(d_x, bx, by, bz);
+                break;
+                case OPT3WL79_32x32x32:
+                opt3wl79_32x32x32_h<mode>(d_x, bx, by, bz);
                 break;
 
         }
