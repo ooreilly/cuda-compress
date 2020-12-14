@@ -68,8 +68,12 @@ int main(int argc, char **argv) {
         //transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 40, 32, 18);
 
         transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        transform<FORWARD>(OPT2WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 40, 32, 18);
+        //
+        transform<INVERSE>(OPT1WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        transform<INVERSE>(OPT2WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         
 }
 
