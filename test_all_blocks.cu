@@ -60,7 +60,7 @@ int test_kernel(enum kernel k, const int nx, const int ny, const int nz, const i
         cudaMalloc((void**)&d_x, num_bytes);
         cudaMemcpy(d_x, x, num_bytes, cudaMemcpyHostToDevice);
 
-        printf("dim = [%d %d %d] blocks = [%d %d %d] ", nx, ny, nz, bx, by, bz);
+        printf("%s \t [%d, %d, %d] [%d, %d, %d] \n", get_kernel_name(k), nx, ny, nz, bx, by, bz);
         wl79_h<FORWARD>(k, d_x, bx, by, bz);
         wl79_h<INVERSE>(k, d_x, bx, by, bz);
         cudaDeviceSynchronize();
@@ -79,11 +79,14 @@ int main(int argc, char **argv) {
         
         const int verbose = 1;
 
-        test_kernel(WL79_8x8x8, 8, 8, 8, 11, 9, 8, verbose);
-        test_kernel(WL79_32x32x32, 32, 32, 32, 11, 9, 8, verbose);
-        test_kernel(OPT1WL79_32x32x32, 32, 32, 32, 30, 9, 8, verbose);
-        test_kernel(OPT2WL79_32x32x32, 32, 32, 32, 30, 9, 8, verbose);
-        test_kernel(OPT3WL79_32x32x32, 32, 32, 32, 30, 9, 8, verbose);
-        return 0;
+        int bx = 11;
+        int by = 9;
+        int bz = 8;
+        test_kernel(WL79_8x8x8, bz, bz, bz, bx, by, bz, verbose);
+        test_kernel(WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT1WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT2WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT3WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT4WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
 }
 

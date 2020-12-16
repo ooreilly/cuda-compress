@@ -2,7 +2,7 @@ CC = gcc
 CXX = g++
 NVCC = nvcc
 arch=sm_75
-NVFLAGS= -arch=$(arch) -Xptxas -v -g -use_fast_math
+NVFLAGS= -arch=$(arch) -Xptxas -v -g -use_fast_math -lineinfo
 CFLAGS=-fopenmp -O3 -fPIC -mavx -g
 LDFLAGS=-fopenmp -lm -lrt
 
