@@ -18,8 +18,13 @@ dim = [32 32 32] blocks = [11 9 8] OK
 ```
 
 ## Test with user-generated input
-This test lets you load in a binary data array from disk. The test runs a forward and inverse pass.
-I mainly use this test during development.
+This test lets you load in a binary data array from disk. 
+
+
+All tests check that the forward followed by the inverse transform recovers the identity transform. The CPU test uses a single block only. 
+I mainly use this test during development. This test itself is not strong enough to guarantee the
+correctness of the code. For example, if do nothing in the forward or inverse kernels, the test will
+pass! I plan to add more tests.
 
 Generate example data
 ```
@@ -57,20 +62,20 @@ Test(s) passed!
 Test the throughput performance of each kernel. I obtained the output below using a RTX 2080 Ti
 card. 
 ```
- ./test_wavelet_transform_with_input.x 
-Wavelet transform 	 Block dimension 	 Grid dimension 	 Throughput
-Forward 	         [8, 8, 8] 	         [352, 416, 320] 	 67183 Mcells/s
-Inverse 	         [8, 8, 8] 	         [352, 416, 320] 	 53651.9 Mcells/s
-Forward 	         [8, 8, 8] 	         [704, 832, 640] 	 67408 Mcells/s
-Inverse 	         [8, 8, 8] 	         [704, 832, 640] 	 54031.7 Mcells/s
-Forward 	         [8, 8, 8] 	         [1056, 1248, 960] 	 67699.4 Mcells/s
-Inverse 	         [8, 8, 8] 	         [1056, 1248, 960] 	 50154.9 Mcells/s
-Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 1974.3 Mcells/s
-Inverse 	         [32, 32, 32] 	         [320, 384, 416] 	 1740.14 Mcells/s
-Forward 	         [32, 32, 32] 	         [640, 800, 640] 	 1989.96 Mcells/s
-Inverse 	         [32, 32, 32] 	         [640, 800, 640] 	 1926.86 Mcells/s
-Forward 	         [32, 32, 32] 	         [1280, 1024, 576] 	 1996.37 Mcells/s
-Inverse 	         [32, 32, 32] 	         [1280, 1024, 576] 	 1967.1 Mcells/s
+./test_wavelet_transform_with_input.x 
+Kernel name       	 Wavelet transform 	 Block dimension 	 Grid dimension 	 Throughput
+wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [352, 416, 320] 	 66678.2 Mcells/s
+wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [704, 832, 640] 	 67242 Mcells/s
+wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [1056, 1248, 960] 	 67741.1 Mcells/s
+opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 29333.4 Mcells/s
+opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [640, 800, 640] 	 30774.7 Mcells/s
+opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [1280, 1024, 576] 	 30883.3 Mcells/s
+wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [352, 416, 320] 	 52022.2 Mcells/s
+wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [704, 832, 640] 	 54296.4 Mcells/s
+wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [1056, 1248, 960] 	 54558.9 Mcells/s
+opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [320, 384, 416] 	 29605.2 Mcells/s
+opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [640, 800, 640] 	 30999.4 Mcells/s
+opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [1280, 1024, 576] 	 31073.1 Mcells/s
 ```
-As you can see, I got some more work to do for the bigger block sizes :).
+Only the 32x32x32 kernel has been optimized at the moment. More optimizations to come...
 
