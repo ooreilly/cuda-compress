@@ -19,11 +19,11 @@
 
 const int FORWARD = 0;
 const int INVERSE = 1;
-const int CPU_COMPUTE = 1;
+const int CPU_COMPUTE = 0;
 const int ERR_CHECK = 1;
 
 const int RUN_32x32x32 = 1;
-const int RUN_8x8x8 = 1;
+const int RUN_8x8x8 = 0;
 
 
 int main(int argc, char **argv) {
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
         cudaEventCreate(&stop);
         printf("[32, 32, 32] Computing GPU forward transform... \n");
         cudaEventRecord(start);
-        wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
+        opt5wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsed, start, stop);
