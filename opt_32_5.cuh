@@ -77,8 +77,8 @@ inline __device__ void opt5ds79_compute(float *p_in, int stride) {
 
 
         // Cycle registers
-        p_m4 = p_p2;
-        p_m3 = p_p1;
+        p_m4 = p_m2;
+        p_m3 = p_m1;
         p_m2 = p_00;
         p_m1 = p_p1;
         p_00 = p_p2;
@@ -87,40 +87,44 @@ inline __device__ void opt5ds79_compute(float *p_in, int stride) {
         p_p3 = p_in[5];
         p_p4 = p_in[6];
 
-        // Second boundary point
-        // stencil: 2 1 0 1 2 3 4 5 6 
-        {
+
+        // Second boundary point and interior
+        // 2 1 0 1 2 3 4 5 6 
+        // 0 1 2 3 4 5 6 7 8 
+        // 2 3 4 5 6 7 8 9 10 ...
+        // 4 5 6 7 8 9 10 11 12 
+       for (int ix = 1;  ix < 14;  ++ix)
+       {
+
+               // Low
+               {
 	        float acc1 = al4 * (p_m4 + p_p4);
                 acc1 += al1 * (p_m1 + p_p1);
 	        acc1 += al0 * p_00;
 	        float acc2 = al3 * (p_m3 + p_p3);
 	        acc2 += al2 * (p_m2 + p_p2);
-	        p_in[1] = acc1 + acc2;
-        }
+	        p_in[ix] = acc1 + acc2;
+               }
 
+               // High
+               {
+		float acc1 = ah3 * (p_m3 + p_p3);
+		acc1 += ah0 * p_00;
+		float acc2 = ah2 * (p_m2 + p_p2);
+		acc2 += ah1 * (p_m1 + p_p1);
+		p_in[(nl+ix)*stride] = acc1 + acc2;
+               }
 
-        // 0 1 2 3 4 5 6 7 8 
-        // 2 3 4 5 6 7 8 9 10 
-       for (int ix = 2;  ix < 16;  ++ix)
-       {
-
-       	int i0 = 2 * ix;
-       	int im1 = dMIRR(i0-1,n);  int ip1 = dMIRR(i0+1,n);
-       	int im2 = dMIRR(i0-2,n);  int ip2 = dMIRR(i0+2,n);
-       	int im3 = dMIRR(i0-3,n);  int ip3 = dMIRR(i0+3,n);
-       	int im4 = dMIRR(i0-4,n);  int ip4 = dMIRR(i0+4,n);
-
-        printf("%d %d %d %d %d %d %d %d %d \n", 
-                        im4, im3, im2, im1, i0, ip1, ip2, ip3, ip4);
-
-
-       	// sum smallest to largest (most accurate way of summing floats)
-       	//float acc1 = al4 * (p_tmp[im4] + p_tmp[ip4]);
-       	//acc1 += al1 * (p_tmp[im1] + p_tmp[ip1]);
-       	//acc1 += al0 * p_tmp[i0];
-       	//float acc2 = al3 * (p_tmp[im3] + p_tmp[ip3]);
-       	//acc2 += al2 * (p_tmp[im2] + p_tmp[ip2]);
-       	//p_in[ix*stride] = acc1 + acc2;
+                // Cycle registers
+                p_m4 = p_m2;
+                p_m3 = p_m1;
+                p_m2 = p_00;
+                p_m1 = p_p1;
+                p_00 = p_p2;
+                p_p1 = p_p3;
+                p_p2 = p_p4;
+                p_p3 = p_in[5 + 2 * ix];
+                p_p4 = p_in[6 + 2 * ix + 1];
        }
 
 	for (int n = size / 2;  n >= 2;  n = n-n/2)
