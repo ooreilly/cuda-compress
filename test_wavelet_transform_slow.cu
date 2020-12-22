@@ -20,7 +20,7 @@
 const int FORWARD = 0;
 const int INVERSE = 1;
 const int CPU_COMPUTE = 0;
-const int ERR_CHECK = 1;
+const int ERR_CHECK = 0;
 
 const int RUN_32x32x32 = 1;
 const int RUN_8x8x8 = 0;
@@ -41,12 +41,12 @@ int main(int argc, char **argv) {
                 read_volume(filename, x2, nx, ny, nz, bx, by, bz);
         } else {
 
-                nx = 8;
-                ny = 8; 
-                nz = 8;
-                bx = 1056 / nx;
-                by = 1248 / ny;
-                bz = 960 / nz;
+                nx = 32;
+                ny = 32; 
+                nz = 32;
+                bx = 1;
+                by = 1;
+                bz = 1;
 
                 init_random(x, nx, ny, nz, bx, by, bz);
 
