@@ -54,22 +54,54 @@ inline __device__ void opt5ds79_compute(float *p_in, int stride) {
         int ip4 = 4; 
 
         float p_00 = p_in[0];
-        float p_ip1 = p_in[1];
-        float p_ip2 = p_in[2];
-        float p_ip3 = p_in[3];
-        float p_ip4 = p_in[4];
+        float p_p1 = p_in[1];
+        float p_p2 = p_in[2];
+        float p_p3 = p_in[3];
+        float p_p4 = p_in[4];
+        float p_m4 = p_p4;
+        float p_m3 = p_p3;
+        float p_m2 = p_p2;
+        float p_m1 = p_p1;
 
 
-	float acc1 = 2.0f * al4 * p_ip4;
-        acc1 += 2.0f * al1 * p_ip1;
-	acc1 += al0 * p_00;
-	float acc2 = 2.0f * al3 * p_ip3;
-	acc2 += 2.0f * al2 * p_ip2;
-	p_in[0] = acc1 + acc2;
+        // First boundary point
+        // stencil: 4 3 2 1 0 1 2 3 4 
+        {
+	        float acc1 = al4 * (p_m4 + p_p4);
+                acc1 += al1 * (p_m1 + p_p1);
+	        acc1 += al0 * p_00;
+	        float acc2 = al3 * (p_m3 + p_p3);
+	        acc2 += al2 * (p_m2 + p_p2);
+	        p_in[0] = acc1 + acc2;
+        }
 
 
-        //2 1 0 1 2 3 4 5 6 
-       for (int ix = 1;  ix < 16;  ++ix)
+        // Cycle registers
+        p_m4 = p_p2;
+        p_m3 = p_p1;
+        p_m2 = p_00;
+        p_m1 = p_p1;
+        p_00 = p_p2;
+        p_p1 = p_p3;
+        p_p2 = p_p4;
+        p_p3 = p_in[5];
+        p_p4 = p_in[6];
+
+        // Second boundary point
+        // stencil: 2 1 0 1 2 3 4 5 6 
+        {
+	        float acc1 = al4 * (p_m4 + p_p4);
+                acc1 += al1 * (p_m1 + p_p1);
+	        acc1 += al0 * p_00;
+	        float acc2 = al3 * (p_m3 + p_p3);
+	        acc2 += al2 * (p_m2 + p_p2);
+	        p_in[1] = acc1 + acc2;
+        }
+
+
+        // 0 1 2 3 4 5 6 7 8 
+        // 2 3 4 5 6 7 8 9 10 
+       for (int ix = 2;  ix < 16;  ++ix)
        {
 
        	int i0 = 2 * ix;
