@@ -52,7 +52,7 @@ inline __device__ int dMIRR_SH(int inp_val, int nl, int nh)
 
 template <int size>
 inline __device__ void ds79_compute(float *p_in, int stride) {
-        float p_tmp[size];
+        register float p_tmp[size];
 
 	for (int n = size;  n >= 2;  n = n-n/2)
 	{

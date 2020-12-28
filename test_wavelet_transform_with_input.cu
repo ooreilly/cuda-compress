@@ -71,6 +71,7 @@ int main(int argc, char **argv) {
         transform<FORWARD>(OPT2WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT3WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT4WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        transform<FORWARD>(OPT5WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 40, 32, 18);
         //
@@ -82,6 +83,7 @@ int main(int argc, char **argv) {
         transform<FORWARD>(OPT2WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         transform<FORWARD>(OPT3WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         transform<FORWARD>(OPT4WL79_32x32x32, 32, 32, 32, 20, 25, 20);
+        transform<FORWARD>(OPT5WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         
 }
 
