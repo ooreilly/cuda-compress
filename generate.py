@@ -1,5 +1,9 @@
 import numpy as np
 
+debug = False
+
+add_print_statements = debug
+
 def declare(n, decl="float"):
     s = []
     for i in range(n):
@@ -7,7 +11,9 @@ def declare(n, decl="float"):
     return "\n".join(s)
 
 def header():
-    return "inline __device__ void opt5ds79_compute2(float * __restrict__ p_in, const int stride) {"
+    return """#pragma once \n\n
+            inline __device__ void opt5ds79_compute2(float * __restrict__ p_in, const int stride)
+            {"""
 
 def mirror(x, n):
     y = []
@@ -37,7 +43,7 @@ def compute(i, n):
 	        acc1 += al0 * p_%d;
 	        float acc2 = al3 * (p_%d + p_%d);
 	        acc2 += al2 * (p_%d + p_%d);
-	        p_in[%d] = acc1 + acc2;
+	        p_in[%d * stride] = acc1 + acc2;
                }
 
                // High
@@ -57,11 +63,12 @@ def compute(i, n):
 print(header())
 n = 32
 print(declare(n))
-while n >= 4:
+while n >= 2:
     for i in range(int(n)//2):
         print(compute(i, n))
     n = n // 2
-#    print('printf("n = %d \\n");' % n)
-#    print("print_array(p_in, 32, 1, 1);")
+    if add_print_statements:
+        print('printf("n = %d \\n");' % n)
+        print("print_array(p_in, 32, 1, 1);")
     print(declare(32, decl=""))
 print("}")

@@ -57,144 +57,10 @@ inline __device__ void ds79_compute2(float *p_in, int stride) {
 template <int size>
 inline __device__ void opt5ds79_compute(float *p_in, int stride) {
         float p_tmp[size];
-
-
-        //ds79_compute2<size>(p_in, stride);
         opt5ds79_compute2(p_in, stride);
-        //print_array(p_in, 32, 1, 1);
-
-        //float4 p0, p1, p2, p3, p4, p5, p6, p7, p8;
-        int n = 32;
-
-       // int i0 = 0;
-       //int pm1 = p_in[im1];
-       //int pm2 = p_in[im2];
-       //int pm3 = p_in[im3];
-       //int pm4 = p_in[im4];
-
-       //int p0 = p_in[i0];
-       //int pp1 = p_in[im1];
-       //int pp2 = p_in[im2];
-       //int pp3 = p_in[im3];
-       //int pp4 = p_in[im4];
-       //
-       //
-       // Indices for the Left boundary
-      //  4 3 2 1 0 1 2 3 4 
-      //  2 1 0 1 2 3 4 5 6 
-
-      //  0 1 2 3 4 5 6 7 8 
-      //  2 3 4 5 6 7 8 9 10 
-      //  4 5 6 7 8 9 10 11 12 
-      //  6 7 8 9 10 11 12 13 14 
-      //  8 9 10 11 12 13 14 15 16 
-      //  10 11 12 13 14 15 16 17 18 
-      //  12 13 14 15 16 17 18 19 20 
-      //  14 15 16 17 18 19 20 21 22 
-      //  16 17 18 19 20 21 22 23 24 
-      //  18 19 20 21 22 23 24 25 26 
-      //  20 21 22 23 24 25 26 27 28 
-      //  22 23 24 25 26 27 28 29 30 
-
-      // // Indices for the right boundary
-      //  24 25 26 27 28 29 30 31 30 
-      //  26 27 28 29 30 31 30 29 28
-
-       //   int nl = 16;
-       // float p_m4, p_m3, p_m2, p_m1, p_00, p_p1, p_p2, p_p3, p_p4;
-       // p_m4 = p_in[4];
-       // p_m3 = p_in[3];
-       // p_m2 = p_in[2];
-       // p_m1 = p_in[1];
-       // p_00 = p_in[0];
-       // p_p1 = p_in[1];
-       // p_p2 = p_in[2];
-       // p_p3 = p_in[3];
-       // p_p4 = p_in[4];
-
-       //for (int ix = 1;  ix < 14;  ++ix)
-       //{
-
-       //        // Low
-       //        {
-       //         float acc1 = al4 * (p_m4 + p_p4);
-       //         acc1 += al1 * (p_m1 + p_p1);
-       //         acc1 += al0 * p_00;
-       //         float acc2 = al3 * (p_m3 + p_p3);
-       //         acc2 += al2 * (p_m2 + p_p2);
-       //         p_in[ix] = acc1 + acc2;
-       //        }
-
-       //        // High
-       //        {
-       // 	float acc1 = ah3 * (p_m3 + p_p3);
-       // 	acc1 += ah0 * p_00;
-       // 	float acc2 = ah2 * (p_m2 + p_p2);
-       // 	acc2 += ah1 * (p_m1 + p_p1);
-       // 	p_in[(nl+ix)*stride] = acc1 + acc2;
-       //        }
-
-       //         // Cycle registers
-       //         p_m4 = p_m2;
-       //         p_m3 = p_m1;
-       //         p_m2 = p_00;
-       //         p_m1 = p_p1;
-       //         p_00 = p_p2;
-       //         p_p1 = p_p3;
-       //         p_p2 = p_p4;
-       //         p_p3 = p_in[5 + 2 * ix];
-       //         p_p4 = p_in[6 + 2 * ix + 1];
-       //}
-
-	//for (int n = size / 2;  n >= 2;  n = n-n/2)
-	//{
-
-	//	// copy inputs to tmp buffer, p_in will be overwritten
-	//	for (int i = 0;  i < n;  ++i) p_tmp[i] = p_in[i*stride];
-        //        //printf("n = %d, %f %f %f %f \n", n, p_tmp[0], p_tmp[1], p_tmp[2], p_tmp[3]);
-        //        print_array(p_in, 32, 1, 1);
-
-
-        //        printf("n = %d \n", n);
-
-	//	int nh = n / 2;
-	//	int nl = n - nh;
-	//	for (int ix = 0;  ix < nl;  ++ix)
-	//	{
-
-
-	//		int i0 = 2 * ix;
-	//		int im1 = dMIRR(i0-1,n);  int ip1 = dMIRR(i0+1,n);
-	//		int im2 = dMIRR(i0-2,n);  int ip2 = dMIRR(i0+2,n);
-	//		int im3 = dMIRR(i0-3,n);  int ip3 = dMIRR(i0+3,n);
-	//		int im4 = dMIRR(i0-4,n);  int ip4 = dMIRR(i0+4,n);
-
-	//		// sum smallest to largest (most accurate way of summing floats)
-	//		float acc1 = al4 * (p_tmp[im4] + p_tmp[ip4]);
-	//		acc1 += al1 * (p_tmp[im1] + p_tmp[ip1]);
-	//		acc1 += al0 * p_tmp[i0];
-	//		float acc2 = al3 * (p_tmp[im3] + p_tmp[ip3]);
-	//		acc2 += al2 * (p_tmp[im2] + p_tmp[ip2]);
-	//		p_in[ix*stride] = acc1 + acc2;
-	//	}
-	//	for (int ix = 0;  ix < nh;  ++ix)
-	//	{
-	//		int i0 = 2 * ix + 1;
-	//		int im1 = dMIRR(i0-1,n);  int ip1 = dMIRR(i0+1,n);
-	//		int im2 = dMIRR(i0-2,n);  int ip2 = dMIRR(i0+2,n);
-	//		int im3 = dMIRR(i0-3,n);  int ip3 = dMIRR(i0+3,n);
-
-	//		float acc1 = ah3 * (p_tmp[im3] + p_tmp[ip3]);
-	//		acc1 += ah0 * p_tmp[i0];
-	//		float acc2 = ah2 * (p_tmp[im2] + p_tmp[ip2]);
-	//		acc2 += ah1 * (p_tmp[im1] + p_tmp[ip1]);
-	//		p_in[(nl+ix)*stride] = acc1 + acc2;
-	//	}
-	//}
 
 }
 
-// Reorganize loads
 template <int kernel, int block_y>
 __launch_bounds__(32 * block_y, 1)
 __global__ void opt5wl79_32x32x32(float *in) {
@@ -322,9 +188,10 @@ __global__ void opt5wl79_32x32x32(float *in) {
 
 template <int mode>
 void opt5wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
-        const int block_y = 8;
+        const int block_y = 1;
         dim3 threads(32, block_y, 1);
         dim3 blocks(bx, by, bz);
+        printf("blocks: %d %d %d \n", blocks.x, blocks.y, blocks.z);
         //const size_t smem = 1 << 15;
 
 

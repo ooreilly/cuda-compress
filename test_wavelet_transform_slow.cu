@@ -11,6 +11,7 @@
 #include "write_volume.h"
 #include "wavelet_slow.h"
 #include "wavelet_slow.cuh"
+//#include "opt_32_6.cuh"
 #include "compare.h"
 #include "diff.h"
 #include "norms.h"
@@ -20,7 +21,7 @@
 const int FORWARD = 0;
 const int INVERSE = 1;
 const int CPU_COMPUTE = 0;
-const int ERR_CHECK = 0;
+const int ERR_CHECK = 1;
 
 const int RUN_32x32x32 = 1;
 const int RUN_8x8x8 = 0;
@@ -161,12 +162,11 @@ int main(int argc, char **argv) {
         cudaDeviceSynchronize();
         printf("Throughput: %g Mcells/s \n", b * n / elapsed / 1e3); 
         cudaDeviceSynchronize();
-        }
 
         if (ERR_CHECK) {
                 printf("Running error checking... \n");
                 cudaMemcpy(x_gpu, d_x, num_bytes, cudaMemcpyDeviceToHost);
-                assert(compare(x, x_gpu, 8, 8, 8, 1));
+                assert(compare(x, x_gpu, 8, 8, 8, 1, 1e-3f));
 
                 const char *errtype[] = {"abs.", "rel."};
                 for (int a = 0; a < 2; ++a) {
@@ -185,6 +185,7 @@ int main(int argc, char **argv) {
                 print_array(x_gpu, 8, 8, 8);
                 printf("err = \n");
                 print_array(err, 8, 8, 8);
+        }
         }
         
         printf("Test(s) passed!\n");
