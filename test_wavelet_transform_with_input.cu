@@ -59,31 +59,12 @@ int main(int argc, char **argv) {
 
         printf("Kernel name       \t Wavelet transform \t Block dimension \t Grid dimension \t Throughput\n");
 
-        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 44, 52, 40);
-        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 88, 104, 80);
-        //transform<FORWARD>(WL79_8x8x8, 8, 8, 8, 132, 156, 120);
-
         transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-        //transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        //transform<FORWARD>(WL79_32x32x32, 32, 32, 32, 40, 32, 18);
-
         transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT2WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT3WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT4WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT5WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-        //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        //transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 40, 32, 18);
-        //
-        //transform<INVERSE>(OPT1WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-        //transform<INVERSE>(OPT2WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-        //transform<INVERSE>(OPT3WL79_32x32x32, 32, 32, 32, 10, 12, 13);
-
-        transform<FORWARD>(OPT1WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        transform<FORWARD>(OPT2WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        transform<FORWARD>(OPT3WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        transform<FORWARD>(OPT4WL79_32x32x32, 32, 32, 32, 20, 25, 20);
-        transform<FORWARD>(OPT5WL79_32x32x32, 32, 32, 32, 20, 25, 20);
         
 }
 

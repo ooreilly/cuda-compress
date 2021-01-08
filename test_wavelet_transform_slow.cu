@@ -11,7 +11,7 @@
 #include "write_volume.h"
 #include "wavelet_slow.h"
 #include "wavelet_slow.cuh"
-//#include "opt_32_6.cuh"
+#include "opt_32_6.cuh"
 #include "compare.h"
 #include "diff.h"
 #include "norms.h"
@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
         cudaEventCreate(&stop);
         printf("[32, 32, 32] Computing GPU forward transform... \n");
         cudaEventRecord(start);
-        opt5wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
+        opt6wl79_32x32x32_h<FORWARD>(d_x, bx, by, bz);
         cudaEventRecord(stop);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsed, start, stop);

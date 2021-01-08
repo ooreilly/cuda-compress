@@ -387,16 +387,16 @@ __global__ void wl79_32x32x32(float *in) {
 
               // Apply wavelet transform line by line in the z-direction
               for (int y = 0; y < planes / block_y; ++y) {
-                      if (kernel == 0) {
-                        ds79_compute_shared<32>(
-                            &smem[idx + snxy * (idy + y * block_y)],
-                            &smem2[idx + snxy * (idy + y * block_y)], snx);
-                      } else {
-                        us79_compute_shared<32>(
-                            &smem[idx + snxy * (idy + y * block_y)],
-                            &smem2[idx + snxy * (idy + y * block_y)], snx);
-                      }
-               }
+                     if (kernel == 0) {
+                       ds79_compute_shared<32>(
+                           &smem[idx + snxy * (idy + y * block_y)],
+                           &smem2[idx + snxy * (idy + y * block_y)], snx);
+                     } else {
+                       us79_compute_shared<32>(
+                           &smem[idx + snxy * (idy + y * block_y)],
+                           &smem2[idx + snxy * (idy + y * block_y)], snx);
+                     }
+              }
 
 
               __syncthreads();
