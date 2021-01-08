@@ -23,13 +23,14 @@ This test lets you load in a binary data array from disk.
 
 All tests check that the forward followed by the inverse transform recovers the identity transform. The CPU test uses a single block only. 
 I mainly use this test during development. This test itself is not strong enough to guarantee the
-correctness of the code. For example, if do nothing in the forward or inverse kernels, the test will
+correctness of the code. For example, if the computation does nothing in both the forward or inverse kernels, the test will
 pass! I plan to add more tests.
 
 Generate example data
 ```
-$ ./write_volume.x x32.bin 32 32 32 4 4 4
-Writing 4x4x4 blocks of dimension 32x32x32 to x32.bin
+$ ./write_volume.x rand32.bin 32 32 32 1 2 3 3
+Generating random grid 
+Writing 1x2x3 blocks of dimension 32x32x32 to rand32.bin 
 ```
 Run test
 ```
@@ -64,18 +65,14 @@ card.
 ```
 ./test_wavelet_transform_with_input.x 
 Kernel name       	 Wavelet transform 	 Block dimension 	 Grid dimension 	 Throughput
-wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [352, 416, 320] 	 66678.2 Mcells/s
-wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [704, 832, 640] 	 67242 Mcells/s
-wl79_8x8x8           	 Forward 	         [8, 8, 8] 	         [1056, 1248, 960] 	 67741.1 Mcells/s
-opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 29333.4 Mcells/s
-opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [640, 800, 640] 	 30774.7 Mcells/s
-opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [1280, 1024, 576] 	 30883.3 Mcells/s
-wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [352, 416, 320] 	 52022.2 Mcells/s
-wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [704, 832, 640] 	 54296.4 Mcells/s
-wl79_8x8x8           	 Inverse 	         [8, 8, 8] 	         [1056, 1248, 960] 	 54558.9 Mcells/s
-opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [320, 384, 416] 	 29605.2 Mcells/s
-opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [640, 800, 640] 	 30999.4 Mcells/s
-opt4wl79_32x32x32    	 Inverse 	         [32, 32, 32] 	         [1280, 1024, 576] 	 31073.1 Mcells/s
+wl79_32x32x32        	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 1969.45 Mcells/s
+opt1wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 8020.04 Mcells/s
+opt2wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 15426.5 Mcells/s
+opt3wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 19844.5 Mcells/s
+opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 28826.9 Mcells/s
+opt5wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 35860.5 Mcells/s
+opt6wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 33323.7 Mcells/s
 ```
-Only the 32x32x32 kernel has been optimized at the moment. More optimizations to come...
+Only the 32x32x32 kernel has been optimized at the moment. Only the forward transform has been
+optimized for versions 5 and up. More optimizations to come...
 
