@@ -187,8 +187,6 @@ int main(int argc, char **argv) {
                 print_array(err, 8, 8, 8);
         }
         }
-        
-        printf("Test(s) passed!\n");
 
 
         if (outfilename) {

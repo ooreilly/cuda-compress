@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define VERBOSE 0
-#define NVCC
 #include "printing.cuh"
 
 #include "cuda_err_check.h"
@@ -77,7 +75,7 @@ int test_kernel(enum kernel k, const int nx, const int ny, const int nz, const i
 int main(int argc, char **argv) {
 
         
-        const int verbose = 1;
+        const int verbose = 0;
 
         int bx = 11;
         int by = 9;
@@ -88,5 +86,7 @@ int main(int argc, char **argv) {
         test_kernel(OPT2WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
         test_kernel(OPT3WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
         test_kernel(OPT4WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT5WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
+        test_kernel(OPT6WL79_32x32x32, 32, 32, 32, bx, by, bz, verbose);
 }
 

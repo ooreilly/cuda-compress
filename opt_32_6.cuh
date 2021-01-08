@@ -127,7 +127,7 @@ void opt6wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
         const int block_y = 32;
         dim3 threads(32, block_y, 1);
         dim3 blocks(bx, by, bz);
-        const size_t smem = 1 << 16;
+        const size_t smem = 50688;
 
 
         cudaErrCheck(cudaFuncSetAttribute(

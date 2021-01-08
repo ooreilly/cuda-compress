@@ -13,9 +13,24 @@ moment and is highly under construction.
 Test all forward and inverse kernels with random input data
 ```
  ./test_all_blocks.x 
-dim = [8 8 8] blocks = [11 9 8] OK
-dim = [32 32 32] blocks = [11 9 8] OK
+wl79_8x8x8 	 [8, 8, 8] [11, 9, 8] 
+OK
+wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt1wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt2wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt3wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt4wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt5wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
+opt6wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+FAILED
 ```
+The most recent optimization does not work :). 
 
 ## Test with user-generated input
 This test lets you load in a binary data array from disk. 
@@ -74,5 +89,5 @@ opt5wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 
 opt6wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 33323.7 Mcells/s
 ```
 Only the 32x32x32 kernel has been optimized at the moment. Only the forward transform has been
-optimized for versions 5 and up. More optimizations to come...
+optimized for versions 5 and up. Version 6 doesn't work yet. More optimizations to come...
 
