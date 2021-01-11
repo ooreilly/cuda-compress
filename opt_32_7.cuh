@@ -1,5 +1,7 @@
 #pragma once
 #include "opt32.cuh"
+#include "opt_32_7_extra.cuh"
+
 
 template <int kernel>
 inline __device__ void opt7ds79_compute(float *p_in, int stride) {
@@ -34,40 +36,49 @@ __global__ void opt7wl79_32x32x32(float *in) {
 
         register float plane[4][32];
 
+        // Each thread holds 4 x 32 registers, denoted by p_z_y that correspond to four y-lines of
+        // strided data in the z-direction. The stride depends on the number of warps. 
+        // If the cube is A[z, y, x] (x fast),
+        // then thread 0 holds A[0, y, 0], A[8, y, 0], A[16, y, 0], A[24, y, 0].
+        DECLARE_REGISTERS
+
+#pragma unroll
         for (int batch_z = 0; batch_z < num_batches_z; ++batch_z) {
-                      // Load all (x,y) planes into shared memory  
-                      // Process an entire 32 x 32 plane
-              if (batch_z * block_y + idy < 32) {
-                      for (int tile_y = 0; tile_y < 32; ++tile_y) {
+              // Load all (x,y) planes into shared memory  
+              // Process an entire 32 x 32 plane
+              for (int tile_y = 0; tile_y < 32; ++tile_y) {
                         size_t sptr = idx + snx * tile_y + snxy * idy ;
                         size_t gptr = idx + 32 * tile_y + 1024 * idy;
                         smem[sptr] = in[batch_z * planes * 1024 + gptr + block_idx];
-                      }
               }
 
-              __syncthreads();
+              __syncwarp();
 
               // Apply wavelet transform line by line in the x-direction
               opt7ds79_compute<kernel>(&smem[snx * idx + snxy * idy], 1);
 
-              __syncthreads();
+              __syncwarp();
 
               // Apply wavelet transform line by line in the y-direction
               opt7ds79_compute<kernel>(
                                   &smem[idx + snxy * idy],
                                   snx);
 
-                __syncthreads();
+                __syncwarp();
 
               // Write result to global memory
               // Write all (x,y) planes back to global memory  
               // Process an entire 32 x 32 plane
-                for (int tile_y = 0; tile_y < 32; ++tile_y) {
-                        size_t sptr = idx + snx * tile_y + snxy * idy;
-                        size_t gptr = idx + 32 * tile_y + 1024 * idy;
-                        in[batch_z * planes * 1024 + gptr + block_idx] =
-                            smem[sptr];
-                }
+                //for (int tile_y = 0; tile_y < 32; ++tile_y) {
+                //        size_t sptr = idx + snx * tile_y + snxy * idy;
+                //        size_t gptr = idx + 32 * tile_y + 1024 * idy;
+                //        in[batch_z * planes * 1024 + gptr + block_idx] =
+                //            smem[sptr];
+                //}
+
+                // Load shared memory data into registers
+                // p_batch_z_j = smem[idx + snx * j + snxy * idy;
+                STORE_IN_REGISTERS(batch_z)
 
                 __syncthreads();
 
