@@ -1,6 +1,7 @@
 #pragma once
 #include "opt32.cuh"
 #include "opt_32_7_extra.cuh"
+#include "printing.cuh"
 
 
 template <int kernel>
@@ -32,15 +33,15 @@ __global__ void opt7wl79_32x32x32(float *in) {
             block_size *
             (blockIdx.x + gridDim.x * (blockIdx.y + gridDim.y * blockIdx.z));
 
-        const int num_batches_z = (32 - 1) / planes + 1;
+        const int num_batches_z = 4; 
 
-        register float plane[4][32];
+        register float p[num_batches_z][32];
 
         // Each thread holds 4 x 32 registers, denoted by p_z_y that correspond to four y-lines of
         // strided data in the z-direction. The stride depends on the number of warps. 
         // If the cube is A[z, y, x] (x fast),
         // then thread 0 holds A[0, y, 0], A[8, y, 0], A[16, y, 0], A[24, y, 0].
-        DECLARE_REGISTERS
+        //DECLARE_REGISTERS
 
 #pragma unroll
         for (int batch_z = 0; batch_z < num_batches_z; ++batch_z) {
@@ -78,26 +79,51 @@ __global__ void opt7wl79_32x32x32(float *in) {
 
                 // Load shared memory data into registers
                 // p_batch_z_j = smem[idx + snx * j + snxy * idy;
-                STORE_IN_REGISTERS(batch_z)
+                for (int j = 0; j < 32; ++j)
+                        p[batch_z][j] = smem[idx + snx * j + snxy * idy];
+                //STORE_IN_REGISTERS(batch_z)
 
                 __syncthreads();
 
         }
 
+        if (idx == 0 && idy == 0) {
+                for (int i = 0; i < snxy*8; ++i)
+                        smem[i] = 0.0f;
+
+        }
+        __syncthreads();
+
         
-       const int num_batches_y = (32 - 1) / planes + 1;
+       const int num_batches_y = 4;
 
         for (int batch_y = 0; batch_y < num_batches_y; ++batch_y) { 
 
-              // Load all (x,z) planes into shared memory  
-              if (batch_y * block_y + idy < 32) {
-                      // Process an entire 32 x 32 plane
-                      for (int tile_z = 0; tile_z < 32 ; ++tile_z) {
-                        size_t sptr = idx + snx * tile_z  +  snxy * idy;
-                        size_t gptr = idx + 1024 * tile_z + 32 * idy;
-                        smem[sptr] = in[batch_y * planes * 32 + gptr + block_idx];
-                      }
+                for (int y = 0; y < 8; ++y) {
+                for (int plane = 0; plane < 4; ++plane) {
+                        int sptr = idx + snx * 8 * plane + snx * idy + snxy * y;
+                        smem[sptr] = p[plane][y + 8 * batch_y];
                 }
+                }
+
+                
+                //__syncthreads();
+                //if (idx == 0 && idy == 0) {
+                //        print_array(smem, snx, sny, 4);
+                //}
+                //__syncthreads();
+                //return;
+
+
+              // Load all (x,z) planes into shared memory  
+              //if (batch_y * block_y + idy < 32) {
+              //        // Process an entire 32 x 32 plane
+              //        for (int tile_z = 0; tile_z < 32 ; ++tile_z) {
+              //          size_t sptr = idx + snx * tile_z  +  snxy * idy;
+              //          size_t gptr = idx + 1024 * tile_z + 32 * idy;
+              //          smem[sptr] = in[batch_y * planes * 32 + gptr + block_idx];
+              //        }
+              //  }
 
               __syncthreads();
 
