@@ -84,45 +84,19 @@ __global__ void opt7wl79_32x32x32(float *in) {
                 __syncthreads();
 
         }
-
-        //if (idx == 0 && idy == 0) {
-        //        for (int i = 0; i < snxy*8; ++i)
-        //                smem[i] = 0.0f;
-
-        //}
-        //__syncthreads();
-
         
        const int num_batches_y = 4;
 
         for (int batch_y = 0; batch_y < num_batches_y; ++batch_y) { 
 
-                //for (int y = 0; y < 8; ++y) {
-                //for (int plane = 0; plane < 4; ++plane) {
-                //        int sptr = idx + snx * 8 * plane + snx * idy + snxy * y;
-                //        smem[sptr] = p[plane][y + 8 * batch_y];
-                //}
-                //}
-                STORE_SHARED(batch_y)
-
-                
-                //__syncthreads();
-                //if (idx == 0 && idy == 0) {
-                //        print_array(smem, snx, sny, 4);
-                //}
-                //__syncthreads();
-                //return;
-
-
-              // Load all (x,z) planes into shared memory  
-              //if (batch_y * block_y + idy < 32) {
-              //        // Process an entire 32 x 32 plane
-              //        for (int tile_z = 0; tile_z < 32 ; ++tile_z) {
-              //          size_t sptr = idx + snx * tile_z  +  snxy * idy;
-              //          size_t gptr = idx + 1024 * tile_z + 32 * idy;
-              //          smem[sptr] = in[batch_y * planes * 32 + gptr + block_idx];
-              //        }
-              //  }
+              // Load (x,z) planes from registers and store in shared memory
+              //for (int y = 0; y < 8; ++y) {
+              //for (int plane = 0; plane < 4; ++plane) {
+              //        int sptr = idx + snx * 8 * plane + snx * idy + snxy * y;
+              //        smem[sptr] = p[plane][y + 8 * batch_y];
+              //}
+              //}
+              STORE_SHARED(batch_y)
 
               __syncthreads();
 
@@ -151,23 +125,7 @@ void opt7wl79_32x32x32_h(float *in, const int bx, const int by, const int bz) {
         const int block_y = 8;
         dim3 threads(32, block_y, 1);
         dim3 blocks(bx, by, bz);
-        //printf("blocks: %d %d %d \n", blocks.x, blocks.y, blocks.z);
-        //const size_t smem = 1 << 15;
-
-
-        //int carveout = cudaSharedmemCarveoutMaxShared;
-        //cudaErrCheck(cudaFuncSetAttribute(
-        //    opt4wl79_32x32x32<mode, block_y>, cudaFuncAttributePreferredSharedMemoryCarveout,
-        //    carveout));
- 
-        //cudaErrCheck(cudaDeviceSetCacheConfig (cudaFuncCachePreferL1));
-
-        //cudaErrCheck(cudaFuncSetAttribute(
-        //            opt4wl79_32x32x32<mode, block_y>, 
-        //            cudaFuncAttributeMaxDynamicSharedMemorySize, smem));
-
         opt7wl79_32x32x32<mode, block_y><<<blocks, threads>>>(in);
-        //opt4wl79_32x32x32<mode, block_y><<<blocks, threads>>>(in);
         cudaErrCheck(cudaPeekAtLastError());
 }
 

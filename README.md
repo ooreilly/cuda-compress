@@ -6,7 +6,9 @@ moment and is highly under construction.
 
 ## Supported features
 * 8 x 8 x 8 Forward and inverse transform.
-* 32 x 32 x 32 Forward and inverse transform.
+* 32 x 32 x 32 Forward and inverse transform. 
+
+**NOTE**: Only the forward transform has been optimized.
 
 
 ## Test with pre-generated input
@@ -29,8 +31,10 @@ opt5wl79_32x32x32 	 [32, 32, 32] [11, 9, 8]
 OK
 opt6wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
 FAILED
+opt7wl79_32x32x32 	 [32, 32, 32] [11, 9, 8] 
+OK
 ```
-The most recent optimization does not work :). 
+Optimization version 6 does not work and it is only not very fast :). 
 
 ## Test with user-generated input
 This test lets you load in a binary data array from disk. 
@@ -50,28 +54,16 @@ Writing 1x2x3 blocks of dimension 32x32x32 to rand32.bin
 Run test
 ```
 $ ./test_wavelet_transform_slow.x x32.bin 
-reading: x32.bin 
+reading: rand32.bin 
 block dimension: 32 32 32 
-number of blocks: 4 4 4 
-Computing CPU forward transform (single block) ... 
-Computing CPU inverse transform (single block) ... 
-abs. l2 error = 0.00130518 l1 error = 0.183796 linf error = 2.67029e-05 
-rel. l2 error = 4.9955e-08 l1 error = 5.65425e-09 linf error = 8.61383e-07 
+number of blocks: 1 2 3 
 [32, 32, 32] Computing GPU forward transform... 
-Throughput: 1564.81 Mcells/s 
+Throughput: 4788.78 Mcells/s 
 [32, 32, 32] Computing GPU inverse transform... 
-Throughput: 1672.43 Mcells/s 
+Throughput: 263.827 Mcells/s 
 Running error checking... 
-abs. l2 error = 0.00981206 l1 error = 10.6313 linf error = 2.67029e-05 
-rel. l2 error = 3.75552e-07 l1 error = 3.27058e-07 linf error = 8.61383e-07 
-[8, 8, 8] Computing GPU forward transform... 
-Throughput: 44887.7 Mcells/s 
-[8, 8, 8] Computing GPU inverse transform... 
-Throughput: 360088 Mcells/s 
-Running error checking... 
-abs. l2 error = 0.000740677 l1 error = 0.090505 linf error = 2.28882e-05 
-rel. l2 error = 2.83491e-08 l1 error = 2.78427e-09 linf error = 7.38329e-07 
-Test(s) passed!
+abs. l2 error = 0.000101344 l1 error = 0.0368315 linf error = 9.53674e-07 
+rel. l2 error = 3.96186e-07 l1 error = 3.74868e-07 linf error = 9.5368e-07 
 ```
 
 ## Throughput
@@ -80,13 +72,14 @@ card.
 ```
 ./test_wavelet_transform_with_input.x 
 Kernel name       	 Wavelet transform 	 Block dimension 	 Grid dimension 	 Throughput
-wl79_32x32x32        	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 1969.45 Mcells/s
-opt1wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 8020.04 Mcells/s
-opt2wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 15426.5 Mcells/s
-opt3wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 19844.5 Mcells/s
-opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 28826.9 Mcells/s
-opt5wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 35860.5 Mcells/s
-opt6wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 33323.7 Mcells/s
+wl79_32x32x32        	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 1968.43 Mcells/s
+opt1wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 8027.09 Mcells/s
+opt2wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 15068.8 Mcells/s
+opt3wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 19548.7 Mcells/s
+opt4wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 29149.3 Mcells/s
+opt5wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 35942 Mcells/s
+opt6wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 33031.6 Mcells/s
+opt7wl79_32x32x32    	 Forward 	         [32, 32, 32] 	         [320, 384, 416] 	 54877.9 Mcells/s
 ```
 Only the 32x32x32 kernel has been optimized at the moment. Only the forward transform has been
 optimized for versions 5 and up. Version 6 doesn't work yet. More optimizations to come...
