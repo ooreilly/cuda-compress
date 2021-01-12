@@ -103,18 +103,15 @@ __global__ void opt7wl79_32x32x32(float *in) {
               // Apply wavelet transform line by line in the z-direction
               opt7ds79_compute<kernel>(&smem[idx + snxy * idy], snx);
 
-              __syncthreads();
+              __syncwarp();
 
-              // Write all (x,z) planes back to global memory  
-              if (batch_y * block_y + idy < 32) {
-                      // Process an entire 32 x 32 plane
-                      for (int tile_z = 0; tile_z < 32 ; ++tile_z) {
-                        size_t sptr = idx + snx * tile_z + snxy * idy;
-                        size_t gptr = idx + 1024 * tile_z  + 32 * idy;
-                        in[batch_y * planes * 32 + gptr + block_idx] = smem[sptr];
-                      }
+              // Write all (x,z) planes back to global memory
+              for (int tile_z = 0; tile_z < 32; ++tile_z) {
+                      size_t sptr = idx + snx * tile_z + snxy * idy;
+                      size_t gptr = idx + 1024 * tile_z + 32 * idy;
+                      in[batch_y * planes * 32 + gptr + block_idx] = smem[sptr];
               }
-              
+
               __syncthreads();
         }
 
