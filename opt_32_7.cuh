@@ -35,15 +35,14 @@ __global__ void opt7wl79_32x32x32(float *in) {
 
         const int num_batches_z = 4; 
 
-        register float p[num_batches_z][32];
 
         // Each thread holds 4 x 32 registers, denoted by p_z_y that correspond to four y-lines of
         // strided data in the z-direction. The stride depends on the number of warps. 
         // If the cube is A[z, y, x] (x fast),
         // then thread 0 holds A[0, y, 0], A[8, y, 0], A[16, y, 0], A[24, y, 0].
-        //DECLARE_REGISTERS
+        //register float p[num_batches_z][32];
+        DECLARE_REGISTERS
 
-#pragma unroll
         for (int batch_z = 0; batch_z < num_batches_z; ++batch_z) {
               // Load all (x,y) planes into shared memory  
               // Process an entire 32 x 32 plane
@@ -78,33 +77,33 @@ __global__ void opt7wl79_32x32x32(float *in) {
                 //}
 
                 // Load shared memory data into registers
-                // p_batch_z_j = smem[idx + snx * j + snxy * idy;
-                for (int j = 0; j < 32; ++j)
-                        p[batch_z][j] = smem[idx + snx * j + snxy * idy];
-                //STORE_IN_REGISTERS(batch_z)
+                // for (int j = 0; j < 32; ++j)
+                //        p[batch_z][j] = smem[idx + snx * j + snxy * idy];
+                LOAD_SHARED(batch_z)
 
                 __syncthreads();
 
         }
 
-        if (idx == 0 && idy == 0) {
-                for (int i = 0; i < snxy*8; ++i)
-                        smem[i] = 0.0f;
+        //if (idx == 0 && idy == 0) {
+        //        for (int i = 0; i < snxy*8; ++i)
+        //                smem[i] = 0.0f;
 
-        }
-        __syncthreads();
+        //}
+        //__syncthreads();
 
         
        const int num_batches_y = 4;
 
         for (int batch_y = 0; batch_y < num_batches_y; ++batch_y) { 
 
-                for (int y = 0; y < 8; ++y) {
-                for (int plane = 0; plane < 4; ++plane) {
-                        int sptr = idx + snx * 8 * plane + snx * idy + snxy * y;
-                        smem[sptr] = p[plane][y + 8 * batch_y];
-                }
-                }
+                //for (int y = 0; y < 8; ++y) {
+                //for (int plane = 0; plane < 4; ++plane) {
+                //        int sptr = idx + snx * 8 * plane + snx * idy + snxy * y;
+                //        smem[sptr] = p[plane][y + 8 * batch_y];
+                //}
+                //}
+                STORE_SHARED(batch_y)
 
                 
                 //__syncthreads();

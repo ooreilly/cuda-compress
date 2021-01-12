@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
         transform<FORWARD>(OPT4WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT5WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         transform<FORWARD>(OPT6WL79_32x32x32, 32, 32, 32, 10, 12, 13);
+        transform<FORWARD>(OPT7WL79_32x32x32, 32, 32, 32, 10, 12, 13);
         
 }
 
