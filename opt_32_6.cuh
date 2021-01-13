@@ -34,6 +34,18 @@ __global__ void opt6wl79_32x32x32(float *in) {
         const int ld = 32;
         const int plane_size = 32 * 32;
 
+        // Put the warps in groups and make each group wait for an estimated amount of time that 
+        // corresponds to how long it takes for one group to complete all of its global memory load
+        // instructions
+        {
+                int group_idx = idy / 4;
+                clock_t start = clock64();
+                clock_t stop = start + group_idx * 1200;
+                while (start < stop) {
+                        start = clock64();
+                }
+        }
+
 
         #pragma unroll
         for (int i = 0; i < ld; ++i) {
