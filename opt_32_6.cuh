@@ -8,7 +8,7 @@ inline __device__ void opt6ds79_compute(float *p_in, int stride) {
         else
                 us79_compute<32>(p_in, stride);
 }
-
+ 
 template <int kernel, int block_y>
 __launch_bounds__(32 * block_y, 1)
 __global__ void opt6wl79_32x32x32(float *in) {
@@ -34,6 +34,7 @@ __global__ void opt6wl79_32x32x32(float *in) {
         const int ld = 32;
         const int plane_size = 32 * 32;
 
+
         #pragma unroll
         for (int i = 0; i < ld; ++i) {
                 values[i] = in[idx + i * ld + idy * plane_size + block_idx];
@@ -48,12 +49,11 @@ __global__ void opt6wl79_32x32x32(float *in) {
         // Transform in y
         opt6ds79_compute<kernel>(values, 1);
 
-#pragma unroll
         for (int g = 0; g < num_groups; ++g) {
                 // store in shared memory
                 if (g == group) {
 
-#pragma unroll
+                        #pragma unroll
                         for (int i = 0; i < ld; ++i) {
                                 int smem_idx = idx + snx * i + group_idx * snxy;
                                 smem[smem_idx] = values[i];
@@ -68,7 +68,7 @@ __global__ void opt6wl79_32x32x32(float *in) {
                         __syncwarp();
 
                         // Write result to registers
-#pragma unroll
+                        #pragma unroll
                         for (int i = 0; i < ld; ++i) {
                                 int smem_idx = idx + snx * i + group_idx * snxy;
                                 values[i] = smem[smem_idx];
@@ -81,10 +81,10 @@ __global__ void opt6wl79_32x32x32(float *in) {
         // Processes along the y-direction with all warps at once, but in three batches due to
         // shared memory limitations
         int offset = 0;
-#pragma unroll
+        #pragma unroll
         for (int g = 0; g < num_groups; ++g) {
 
-#pragma unroll
+                #pragma unroll
                 for (int i = 0; i < group_size; ++i) {
                         int smem_idx = idy + snx * idx + snxy * i;
                         if (offset + i > 31) break;
@@ -105,6 +105,7 @@ __global__ void opt6wl79_32x32x32(float *in) {
                 __syncthreads();
 
                 // Write result to registers
+                #pragma unroll
                 for (int i = 0; i < group_size; ++i) {
                         int smem_idx = idy + snx * idx + snxy * i;
                         values[i + offset] = smem[smem_idx];
@@ -115,7 +116,7 @@ __global__ void opt6wl79_32x32x32(float *in) {
         }
 
         // Write final result to global memory
-#pragma unroll
+        #pragma unroll
         for (int i = 0; i < ld; ++i) {
                 in[idx + i * ld + idy * plane_size + block_idx] = values[i];
         }
